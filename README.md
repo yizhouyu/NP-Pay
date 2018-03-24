@@ -1,4 +1,4 @@
-# CS 6466 Fina; Project -- Name TBD
+# CS 6466 Final Project -- Name TBD
 
 Abhi Gupta, Claudia Dabrowski, Yizhou Yu
 Cornell University
