@@ -12,6 +12,7 @@ contract ProblemFactory is Ownable {
     }
 
     event New_SAT_Problem(uint problemId, uint num_vars, uint reward);
+    event New_TSP_Problem(uint id, uint num_nodes, uint max_dist, uint reward);
 
     struct Problem_TSP {
         uint num_nodes;
@@ -23,7 +24,8 @@ contract ProblemFactory is Ownable {
     Problem_SAT[] public sat_problems;
     Problem_TSP[] public tsp_problems;
 
-    mapping (address => uint) ownerProblemCount;
+    // number of problems that the owner has issued
+    mapping (address => uint) ownerProblemCount; 
     mapping (uint => address) public satToOwner;
     mapping (uint => address) public tspToOwner;
 
@@ -31,13 +33,13 @@ contract ProblemFactory is Ownable {
         uint id = sat_problems.push(Problem_SAT(num_vars, clauses, reward));
 	satToOwner[id] = msg.sender;
 	ownerProblemCount[msg.sender]++;
-	New_SAT_Problem(id, num_vars, reward);
+	emit New_SAT_Problem(id, num_vars, reward);
     }
 
     function createTSPProblem(uint num_nodes, uint max_dist, uint reward) public {
         uint id = tsp_problems.push(Problem_TSP(num_nodes, max_dist, reward));
 	tspToOwner[id] = msg.sender;
 	ownerProblemCount[msg.sender]++;
-	New_TSP_Problem(id, num_nodes, max_dist, reward);
+	emit New_TSP_Problem(id, num_nodes, max_dist, reward);
     }
 }

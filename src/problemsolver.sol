@@ -12,28 +12,28 @@ contract ProblemSolver is ProblemFactory {
 
     struct SATSolution {
        string assignment;
-       uint32 time_proposed;
+       uint256 time_proposed;
        address solver; // the person who proposed the solution
     }
 
     struct TSPSolution {
-       uint32 time_proposed;
+       uint256 time_proposed;
        address solver;
     }
 
-    event SATSolutionProposed(uint problemId, uint32 time_proposed);
-    event TSPSolutionProposed(uint problemId, uint32 time_proposed);
+    event SATSolutionProposed(uint problemId, uint256 time_proposed);
+    event TSPSolutionProposed(uint problemId, uint256 time_proposed);
     
-    function proposeSATSolution(uint problemId, string assignment) public {
+    function proposeSATSolution(uint problemId, string assignment) public payable {
         require(msg.value >= min_deposit_solve);
 	solutions_SAT[problemId] = SATSolution(assignment, now, msg.sender);
-	SATSolutionProposed(problemId, now);
+	emit SATSolutionProposed(problemId, now);
     }
 
-    function proposeTSPSolution(uint problemId) public {
+    function proposeTSPSolution(uint problemId) public payable{
         require(msg.value >= min_deposit_solve);
 	solutions_TSP[problemId] = TSPSolution(now, msg.sender);
-	TSPSolutionProposed(problemId, now);
+	emit TSPSolutionProposed(problemId, now);
 	// TODO
     }
 }
