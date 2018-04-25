@@ -1,8 +1,8 @@
 pragma solidity ^0.4.19;
 
-import "./problemsolver.sol";
+import "./solutionfactory.sol";
 
-contract ProblemVerifier is ProblemSolver {
+contract SolutionVerifier is SolutionFactory {
     // 1000 votes for manual trigger, 7500 votes for auto trigger, 24 hrs for auto trigger
 
     uint min_deposit_verify = 100; // TODO change
