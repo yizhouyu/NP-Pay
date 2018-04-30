@@ -22,4 +22,27 @@ contract SolutionVerifier is SolutionFactory {
 	    no_votes_SAT[problem_id].push(msg.sender);
 	}
     }
+    
+    // run verification on-chain
+    function verify_assignment(string clauses, string assignment) public pure returns (bool) {
+        // convert assignment string to array
+        bytes memory b_clauses = bytes(clauses);
+        bytes memory b_assignment = bytes(assignment);
+        uint ptr_assignment = 0; // pointer on characters in assignment
+        for (uint i = 0; i < b_clauses.length; i++) {
+            // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
+            // assignment: 0: F, 1: T
+            if (b_clauses[i] == 0 && b_assignment[ptr_assignment] != 0) {
+                return false;
+            }
+            if (b_clauses[i] == 1 && b_assignment[ptr_assignment] != 1) {
+                return false;
+            }
+            ptr_assignment += 1;
+            if (ptr_assignment == b_assignment.length) {
+                ptr_assignment = 0;
+            }
+        }
+        return true;
+    }
 }

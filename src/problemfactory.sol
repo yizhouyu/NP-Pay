@@ -9,7 +9,7 @@ contract ProblemFactory is Ownable {
     
     struct Problem_SAT {
         uint num_vars;
-	// 0: not exist; 1: exist, regular; 2: exist, negated
+	// clauses: 0: exist, negated; 1: exist, regular; 2: not exist
 	string clauses;
 	uint reward;
     }
