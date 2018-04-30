@@ -43,9 +43,11 @@ contract SolutionVerifier is SolutionFactory {
             // proposed solution is indeed incorrect
             uint256 reward_to_caller = min_deposit_verify;
             reward_to_caller += manual_trigger_gas_cost;
-            uint trigger_reward = (total_votes-num_no_votes) / trigger_reward_div;
+            uint trigger_reward = (num_yes_votes*min_deposit_verify 
+                                       - manual_trigger_gas_cost) / trigger_reward_div;
             reward_to_caller += trigger_reward;
-            uint normal_reward = (total_votes - trigger_reward) / num_no_votes;
+            uint normal_reward = (num_yes_votes*min_deposit_verify - trigger_reward) / num_no_votes;
+            reward_to_caller += normal_reward;
             uint256 reward_to_no_voters = min_deposit_verify + normal_reward;
             // transfer ether to the one who triggered verification
             msg.sender.transfer(reward_to_caller);
