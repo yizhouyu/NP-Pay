@@ -31,7 +31,7 @@ contract SolutionFactory is ProblemFactory {
 
     event SATSolutionHashProposed(uint problemId, uint hashId, uint256 time_proposed);
     
-    event SATSolutionProposed(uint problemId, uint256 time_proposed);
+    event SATSolutionProposed(uint problemId, uint hashId, uint solutionId, uint256 time_proposed);
     
     // propose the hash of the solution to the problem at problemId.
     // returns the index of the new SATSolutionHash struct that is created.
@@ -46,7 +46,7 @@ contract SolutionFactory is ProblemFactory {
     }
     
     // propose the solution to the problem at problemId.
-    function proposeSATSolution(uint problemId, uint hashId, string assignment) public payable {
+    function proposeSATSolution(uint problemId, uint hashId, string assignment) public payable returns (uint){
         require(msg.value >= solution_deposit);
         // check that the hash of the solution exists in the array
         require(solutionHashes_SAT[problemId].length >= hashId);
@@ -56,8 +56,10 @@ contract SolutionFactory is ProblemFactory {
         // check that the caller of this function is the same person who proposed the hash 
         require(msg.sender == sol_hash.solver);
         // the hashes match, so we can record the solution now
-        solutions_SAT[problemId][hashId] = SATSolution(assignment, sol_hash.time_proposed, msg.sender);
-        emit SATSolutionProposed(problemId, now);
+        // solutionId represents which index the solution is located in solutions_SAT[problemId]
+        uint solutionId = solutions_SAT[problemId].push(SATSolution(assignment, sol_hash.time_proposed, msg.sender));
+        emit SATSolutionProposed(problemId, hashId, solutionId, now);
+        return solutionId;
     }
 }
 
