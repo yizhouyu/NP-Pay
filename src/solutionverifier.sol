@@ -9,35 +9,40 @@ contract SolutionVerifier is SolutionFactory {
     uint manual_trigger_gas_cost = 100; // TODO change
     uint trigger_reward_div = 10; // divide reward by trigger_reward_div
 
-    // mapping from problemId to mapping from solutionId to addresses of up votes
+    // mapping from problemId to [mapping from solutionId to addresses of up votes]
     mapping (uint => mapping (uint => address[])) upvotes_SAT; 
     mapping (uint => mapping (uint => address[])) downvotes_SAT;
-    // whether a solution has received up votes
-    mapping (uint => bool) has_upvotes_SAT; 
-    mapping (uint => bool) has_downvotes_SAT;
+    
+    // balance of each player
+    mapping (address => uint) balance;
 
-    // if suggest_verify -> trigger verification on chain
-    function vote_SAT(uint problemId, uint solutionId, bool decision, bool want_onchain_verify) public payable {
+    // if trigger_verify -> trigger verification on chain
+    function vote_SAT(uint problemId, uint solutionId, bool vote_up, bool trigger_verify) public payable {
         require(msg.value >= vote_deposit);
 	// check time
-	if (decision) {
-	    // voted yes
+	if (vote_up) {
+	    // vote for the solution
 	    upvotes_SAT[problemId][solutionId].push(msg.sender);
 	} else {
+	    // vote against the solution
 	    downvotes_SAT[problemId][solutionId].push(msg.sender);
 	}
 	
-	if (want_onchain_verify) {
-	    trigger_verification(problemId, solutionId);
+	if (trigger_verify) {
+	    trigger_verification(problemId, solutionId, vote_up);
 	}
     }
     
-    function trigger_verification(uint problemId, uint solutionId) public {
+    // checks whether the solution to the problem is correct.
+    // vote_up is the vote that the caller cast.
+    function trigger_verification(uint problemId, uint solutionId, bool vote_up) public {
         // check first that verifier actually has voted
         Problem_SAT memory problem = sat_problems[problemId];
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
-        uint num_upvotes = upvotes_SAT[problemId][solutionId].length; // TODO
-        uint num_downvotes = downvotes_SAT[problemId][solutionId].length; // TODO
+        uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
+        uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
+        // require that there is disagreement among voters
+        require(num_upvotes>0 && num_downvotes>0);
         uint total_votes = num_upvotes + num_downvotes;
         if (!verify_assignment(problem.clauses, solution.assignment)) {
             // proposed solution is indeed incorrect
