@@ -13,13 +13,21 @@ contract SolutionVerifier is SolutionFactory {
     mapping (uint => mapping (uint => address[])) upvotes_SAT; 
     mapping (uint => mapping (uint => address[])) downvotes_SAT;
     
+    // whether the on-chain verification has been triggered and run on-chain
+    mapping (uint => mapping (uint => bool)) solution_is_verified;
+    
     // balance of each player
     mapping (address => uint) balance;
+    
+    event Vote_Cast(uint problemId, uint solutionId, bool vote);
+    // [result] is the result of the verification
+    event Verification_Triggered(uint problemId, uint solutionId, bool result);
 
     // if trigger_verify -> trigger verification on chain
     function vote_SAT(uint problemId, uint solutionId, bool vote_up, bool trigger_verify) public payable {
+        // cannot vote after the verification function has been called
+        require(!solution_is_verified[problemId][solutionId]);
         require(msg.value >= vote_deposit);
-	// check time
 	if (vote_up) {
 	    // vote for the solution
 	    upvotes_SAT[problemId][solutionId].push(msg.sender);
@@ -27,6 +35,7 @@ contract SolutionVerifier is SolutionFactory {
 	    // vote against the solution
 	    downvotes_SAT[problemId][solutionId].push(msg.sender);
 	}
+	emit Vote_Cast(problemId, solutionId, vote_up);
 	
 	if (trigger_verify) {
 	    trigger_verification(problemId, solutionId, vote_up);
@@ -36,40 +45,55 @@ contract SolutionVerifier is SolutionFactory {
     // checks whether the solution to the problem is correct.
     // vote_up is the vote that the caller cast.
     function trigger_verification(uint problemId, uint solutionId, bool vote_up) public {
-        // check first that verifier actually has voted
-        Problem_SAT memory problem = sat_problems[problemId];
-        SATSolution memory solution = solutions_SAT[problemId][solutionId];
-        uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
-        uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
+        address[] memory up_voter_addresses = upvotes_SAT[problemId][solutionId];
+        address[] memory down_voter_addresses = downvotes_SAT[problemId][solutionId];
+        uint num_upvotes = up_voter_addresses.length;
+        uint num_downvotes = down_voter_addresses.length;
         // require that there is disagreement among voters
         require(num_upvotes>0 && num_downvotes>0);
         uint total_votes = num_upvotes + num_downvotes;
+        
+        Problem_SAT memory problem = sat_problems[problemId];
+        SATSolution memory solution = solutions_SAT[problemId][solutionId];
+        
         if (!verify_assignment(problem.clauses, solution.assignment)) {
-            // proposed solution is indeed incorrect
-            uint256 reward_to_caller = vote_deposit;
-            reward_to_caller += manual_trigger_gas_cost;
-            uint trigger_reward = (num_upvotes*vote_deposit 
-                                       - manual_trigger_gas_cost) / trigger_reward_div;
-            reward_to_caller += trigger_reward;
-            uint normal_reward = (num_upvotes*vote_deposit - trigger_reward) / num_downvotes;
-            reward_to_caller += normal_reward;
-            uint256 reward_to_no_voters = vote_deposit + normal_reward;
-            // transfer ether to the one who triggered verification
-            msg.sender.transfer(reward_to_caller);
-            // transfer ether to other voters who voted no
-            address[] memory addresses_no = downvotes_SAT[problemId][solutionId];
-            for (uint i = 0; i<addresses_no.length; i++) {
-                addresses_no[i].transfer(reward_to_no_voters);
+            // proposed solution is incorrect
+            emit Verification_Triggered(problemId, solutionId, false);
+            
+            if (!vote_up) {
+                // the caller of the verification is correct.
+                // the one who triggered verification gets reward
+                balance[msg.sender] += vote_deposit;
+                // reimburse gas cost
+                balance[msg.sender] += manual_trigger_gas_cost;
+                // reward for triggering verification
+                uint trigger_reward = (num_upvotes*vote_deposit - manual_trigger_gas_cost) / trigger_reward_div;
+                balance[msg.sender] += trigger_reward;
+                uint normal_reward = (num_upvotes*vote_deposit - trigger_reward) / num_downvotes;
+                balance[msg.sender] += normal_reward;
+                // the other voters who voted for the correct result get reward
+                for (uint i = 0; i<down_voter_addresses.length; i++) {
+                    balance[down_voter_addresses[i]] += (vote_deposit + normal_reward);
+                }
+            } else {
+                // the caller of the verification is incorrect
+                for (i = 0; i<down_voter_addresses.length; i++) {
+                    balance[down_voter_addresses[i]] += (total_votes * vote_deposit / num_upvotes);
+                }
             }
         } else {
-            // proposed solution is actually correct
-            // transfer ether to those who voted yes
-            address[] memory addresses_yes = upvotes_SAT[problemId][solutionId];
-            uint256 reward_to_yes_voters = total_votes * vote_deposit / num_upvotes;
-            for (uint j = 0; j<addresses_yes.length; j++) {
-                addresses_yes[j].transfer(reward_to_yes_voters);
-            }
+            // proposed solution is correct
+            emit Verification_Triggered(problemId, solutionId, true);
+            if (vote_up) {
+                // the caller of the verification is correct
+                // TODO
+            } else {
+                // the caller of the verification is incorrect
+                for (i = 0; i<up_voter_addresses.length; i++) {
+                    balance[up_voter_addresses[i]] += (total_votes * vote_deposit / num_upvotes);
+                }
         }
+        } 
     }
     
     // run verification on-chain. Check whether [assignment] satisfies [clauses].
