@@ -25,7 +25,7 @@ contract SolutionVerifier is SolutionFactory {
     
     event Vote_Cast(uint problemId, uint solutionId, bool vote);
     // [result] is the result of the verification
-    event Verification_Triggered(uint problemId, uint solutionId, bool result);
+    event Verification_Performed(uint problemId, uint solutionId, bool result);
 
     // if trigger_verify -> trigger verification on chain
     function vote_SAT(uint problemId, uint solutionId, bool vote_up, bool trigger_verify) public payable {
@@ -42,8 +42,10 @@ contract SolutionVerifier is SolutionFactory {
 	emit Vote_Cast(problemId, solutionId, vote_up);
 	
 	if (trigger_verify) {
-	    require(can_trigger_manual_verification(problemId, solutionId) || can_trigger_auto_verification(problemId, solutionId));
-	    trigger_verification(problemId, solutionId, vote_up);
+	    require(can_trigger_manual_verification(problemId, solutionId));
+	    trigger_manual_verification(problemId, solutionId, vote_up);
+	} else if (can_trigger_auto_verification(problemId, solutionId)){
+	    trigger_auto_verification(problemId, solutionId);
 	}
     }
     
@@ -52,9 +54,10 @@ contract SolutionVerifier is SolutionFactory {
         uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
         uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
         // require that there is disagreement among voters
-        require(num_upvotes>0 && num_downvotes>0);
+        bool condition_1 = num_upvotes>0 && num_downvotes>0;
         uint total_votes = num_upvotes + num_downvotes;
-        require(total_votes > min_votes_to_manual_trigger);
+        bool condition_2 = total_votes > min_votes_to_manual_trigger;
+        return (condition_1 && condition_2);
     }
     
     function can_trigger_auto_verification(uint problemId, uint solutionId) public view returns (bool) {
@@ -62,14 +65,14 @@ contract SolutionVerifier is SolutionFactory {
         uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
         uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
         uint total_votes = num_upvotes + num_downvotes;
-        bool condition_1 = (total_votes > min_time_to_auto_trigger);
-        bool condition_2 = (now - solution.time_sol_proposed > 1 days);
+        bool condition_1 = (total_votes > min_time_to_auto_trigger); // vote condition
+        bool condition_2 = (now - solution.time_sol_proposed > 1 days); // time condition
         return (condition_1 || condition_2);
     }
     
     // checks whether the solution to the problem is correct.
     // vote_up is the vote that the caller cast.
-    function trigger_verification(uint problemId, uint solutionId, bool vote_up) private {
+    function trigger_manual_verification(uint problemId, uint solutionId, bool vote_up) private {
         address[] memory up_voter_addresses = upvotes_SAT[problemId][solutionId];
         address[] memory down_voter_addresses = downvotes_SAT[problemId][solutionId];
         uint num_upvotes = up_voter_addresses.length;
@@ -81,7 +84,7 @@ contract SolutionVerifier is SolutionFactory {
         
         if (!verify_assignment(problem.clauses, solution.assignment)) {
             // proposed solution is incorrect
-            emit Verification_Triggered(problemId, solutionId, false);
+            emit Verification_Performed(problemId, solutionId, false);
             
             if (!vote_up) {
                 // the caller of the verification is correct.
@@ -106,7 +109,7 @@ contract SolutionVerifier is SolutionFactory {
             }
         } else {
             // proposed solution is correct
-            emit Verification_Triggered(problemId, solutionId, true);
+            emit Verification_Performed(problemId, solutionId, true);
             if (vote_up) {
                 // the caller of the verification is correct
                 // TODO
@@ -117,6 +120,10 @@ contract SolutionVerifier is SolutionFactory {
                 }
         }
         } 
+    }
+    
+    function trigger_auto_verification(uint problemId, uint solutionId) private {
+        // TODO
     }
     
     // run verification on-chain. Check whether [assignment] satisfies [clauses].
