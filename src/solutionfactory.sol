@@ -20,6 +20,7 @@ contract SolutionFactory is ProblemFactory {
     struct SATSolution {
        string assignment;
        uint256 time_hash_proposed; // time that the hash of this solution was proposed
+       uint256 time_sol_proposed; // time that this solution was proposed
        address solver; // address of the person who proposed the solution
     }
     
@@ -57,37 +58,8 @@ contract SolutionFactory is ProblemFactory {
         require(msg.sender == sol_hash.solver);
         // the hashes match, so we can record the solution now
         // solutionId represents which index the solution is located in solutions_SAT[problemId]
-        uint solutionId = solutions_SAT[problemId].push(SATSolution(assignment, sol_hash.time_proposed, msg.sender));
+        uint solutionId = solutions_SAT[problemId].push(SATSolution(assignment, sol_hash.time_proposed, now, msg.sender));
         emit SATSolutionProposed(problemId, hashId, solutionId, now);
         return solutionId;
     }
 }
-
-/*
-
-    struct TSPSolutionHash {
-        uint256 hash;
-        uint256 time_proposed;
-        address solver;
-    }
-
-    struct TSPSolution {
-       address solver;
-    }
-    
-    mapping (uint => TSPSolutionHash[]) public solutionsHashes_TSP;
-    
-    mapping (uint => TSPSolution[]) public solutions_TSP;
-    
-    event TSPSolutionHashProposed(uint problemId, uint256 time_proposed);
-    event TSPSolutionProposed(uint problemId, uint256 time_proposed);
-    
-    function proposeTSPSolution(uint problemId, uint256 hash) public payable{
-        require(msg.value >= min_deposit_solve);
-        require(solutionsHashes_TSP[problemId].length < max_solutions_to_accept);
-        solutionsHashes_TSP[problemId].push(TSPSolutionHash(hash, now, msg.sender));
-        emit TSPSolutionHashProposed(problemId, now);
-	// TODO
-    }
-    
-*/
