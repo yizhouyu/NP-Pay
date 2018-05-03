@@ -19,6 +19,8 @@ contract SolutionVerifier is SolutionFactory {
     
     // whether the on-chain verification has been triggered and run on-chain
     mapping (uint => mapping (uint => bool)) solution_is_verified;
+    // result of the verification
+    mapping (uint => mapping (uint => bool)) solution_is_correct;
     
     // balance of each player
     mapping (address => uint) balance;
@@ -109,6 +111,7 @@ contract SolutionVerifier is SolutionFactory {
             }
         } else {
             // proposed solution is correct
+            solution_is_correct[problemId][solutionId] = true;
             emit Verification_Performed(problemId, solutionId, true);
             if (vote_up) {
                 // the caller of the verification is correct
