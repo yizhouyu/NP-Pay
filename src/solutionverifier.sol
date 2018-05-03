@@ -7,6 +7,8 @@ contract SolutionVerifier is SolutionFactory {
 
     uint vote_deposit = 100; // TODO change
     uint manual_trigger_gas_cost = 100; // TODO change
+    // minimum number of votes already collected in order to trigger on-chain verification
+    uint min_votes_to_trigger = 1000; 
     uint trigger_reward_div = 10; // divide reward by trigger_reward_div
 
     // mapping from problemId to [mapping from solutionId to addresses of up votes]
@@ -42,15 +44,26 @@ contract SolutionVerifier is SolutionFactory {
 	}
     }
     
-    // checks whether the solution to the problem is correct.
-    // vote_up is the vote that the caller cast.
-    function trigger_verification(uint problemId, uint solutionId, bool vote_up) public {
+    // whether conditions for a manual trigger of verification are met
+    function can_trigger_manual_verification(uint problemId, uint solutionId) private view returns (bool) {
         address[] memory up_voter_addresses = upvotes_SAT[problemId][solutionId];
         address[] memory down_voter_addresses = downvotes_SAT[problemId][solutionId];
         uint num_upvotes = up_voter_addresses.length;
         uint num_downvotes = down_voter_addresses.length;
         // require that there is disagreement among voters
         require(num_upvotes>0 && num_downvotes>0);
+        uint total_votes = num_upvotes + num_downvotes;
+        require(total_votes > min_votes_to_trigger);
+    }
+    
+    // checks whether the solution to the problem is correct.
+    // vote_up is the vote that the caller cast.
+    function trigger_verification(uint problemId, uint solutionId, bool vote_up) public {
+        require(can_trigger_manual_verification(problemId, solutionId));
+        address[] memory up_voter_addresses = upvotes_SAT[problemId][solutionId];
+        address[] memory down_voter_addresses = downvotes_SAT[problemId][solutionId];
+        uint num_upvotes = up_voter_addresses.length;
+        uint num_downvotes = down_voter_addresses.length;
         uint total_votes = num_upvotes + num_downvotes;
         
         Problem_SAT memory problem = sat_problems[problemId];
