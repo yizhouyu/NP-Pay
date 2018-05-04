@@ -7,10 +7,10 @@ contract SolutionVerifier is SolutionFactory {
 
     uint vote_deposit = 100; // TODO change
     uint manual_trigger_gas_cost = 100; // TODO change
-    // minimum number of votes already collected in order to trigger on-chain verification
+    // minimum number of votes already collected required in order to manually trigger on-chain verification
     uint min_votes_to_manual_trigger = 1000; 
     uint min_votes_to_auto_trigger = 7500;
-    uint min_time_to_auto_trigger = 1 days;
+    uint min_time_to_auto_trigger = 24 hours;
     uint trigger_reward_div = 10; // divide reward by trigger_reward_div
 
     // mapping from problemId to [mapping from solutionId to addresses of up votes]
@@ -86,12 +86,12 @@ contract SolutionVerifier is SolutionFactory {
         
         if (!verify_assignment(problem.clauses, solution.assignment)) {
             // proposed solution is incorrect
+            solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
             
             if (!vote_up) {
                 // the caller of the verification is correct.
                 // the one who triggered verification gets reward
-                balance[msg.sender] += vote_deposit;
                 // reimburse gas cost
                 balance[msg.sender] += manual_trigger_gas_cost;
                 // reward for triggering verification
@@ -99,14 +99,14 @@ contract SolutionVerifier is SolutionFactory {
                 balance[msg.sender] += trigger_reward;
                 uint normal_reward = (num_upvotes*vote_deposit - trigger_reward) / num_downvotes;
                 balance[msg.sender] += normal_reward;
-                // the other voters who voted for the correct result get reward
+                // the other voters who voted against the proposed solution get reward
                 for (uint i = 0; i<down_voter_addresses.length; i++) {
                     balance[down_voter_addresses[i]] += (vote_deposit + normal_reward);
                 }
             } else {
                 // the caller of the verification is incorrect
                 for (i = 0; i<down_voter_addresses.length; i++) {
-                    balance[down_voter_addresses[i]] += (total_votes * vote_deposit / num_upvotes);
+                    balance[down_voter_addresses[i]] += (total_votes * vote_deposit / num_downvotes);
                 }
             }
         } else {
@@ -115,7 +115,18 @@ contract SolutionVerifier is SolutionFactory {
             emit Verification_Performed(problemId, solutionId, true);
             if (vote_up) {
                 // the caller of the verification is correct
-                // TODO
+                // the one who triggered verification gets reward
+                // reimburse gas cost
+                balance[msg.sender] += manual_trigger_gas_cost;
+                // reward for triggering verification
+                trigger_reward = (num_downvotes*vote_deposit - manual_trigger_gas_cost) / trigger_reward_div;
+                balance[msg.sender] += trigger_reward;
+                normal_reward = (num_downvotes*vote_deposit - trigger_reward) / num_upvotes;
+                balance[msg.sender] += normal_reward;
+                // the other voters who voted for the proposed solution get reward
+                for (i = 0; i<down_voter_addresses.length; i++) {
+                    balance[down_voter_addresses[i]] += (vote_deposit + normal_reward);
+                }
             } else {
                 // the caller of the verification is incorrect
                 for (i = 0; i<up_voter_addresses.length; i++) {
@@ -123,10 +134,37 @@ contract SolutionVerifier is SolutionFactory {
                 }
         }
         } 
+        solution_is_verified[problemId][solutionId] = true;
     }
     
     function trigger_auto_verification(uint problemId, uint solutionId) private {
-        // TODO
+        address[] memory up_voter_addresses = upvotes_SAT[problemId][solutionId];
+        address[] memory down_voter_addresses = downvotes_SAT[problemId][solutionId];
+        uint num_upvotes = up_voter_addresses.length;
+        uint num_downvotes = down_voter_addresses.length;
+        uint total_votes = num_upvotes + num_downvotes;
+        
+        Problem_SAT memory problem = sat_problems[problemId];
+        SATSolution memory solution = solutions_SAT[problemId][solutionId];
+        
+        if (!verify_assignment(problem.clauses, solution.assignment)) {
+            // proposed solution is incorrect
+            solution_is_correct[problemId][solutionId] = false;
+            emit Verification_Performed(problemId, solutionId, false);
+            // those who cast down votes get the reward
+            for (uint i = 0; i<down_voter_addresses.length; i++) {
+                    balance[down_voter_addresses[i]] += (total_votes*vote_deposit) / num_downvotes;
+            }
+        } else {
+            // proposed solution is correct
+            solution_is_correct[problemId][solutionId] = true;
+            emit Verification_Performed(problemId, solutionId, true);
+            // those who cast up votes get the reward
+            for (i = 0; i<up_voter_addresses.length; i++) {
+                    balance[up_voter_addresses[i]] += (total_votes*vote_deposit) / num_upvotes;
+            }
+        }
+        solution_is_verified[problemId][solutionId] = true;
     }
     
     // run verification on-chain. Check whether [assignment] satisfies [clauses].
