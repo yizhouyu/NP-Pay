@@ -5,15 +5,18 @@ import "./ownable.sol";
 contract ProblemFactory is Ownable {
 
     // cost that the problem issuer needs to pay to the contract
-    uint problem_issue_cost = 1000; //TODO change
+    uint problem_issue_cost = 1; //TODO change
     // limit on the number of unsolved problems that an address can issue.  
     uint problem_limit = 5;
     
     struct Problem_SAT {
+        address issuer;
         uint num_vars;
 	// clauses: 0: exist, negated; 1: exist, regular; 2: not exist
 	string clauses;
 	uint reward;
+	// whether or not the problem has already been solved
+	bool solved; 
     }
 
     event New_SAT_Problem(uint problemId, uint num_vars, uint reward);
@@ -30,10 +33,22 @@ contract ProblemFactory is Ownable {
     function createSATProblem(uint num_vars, string clauses, uint reward) public payable returns (uint) {
         require(msg.value >= reward + problem_issue_cost);
         require(ownerProblemCount[msg.sender] < problem_limit);
-        uint problemId = sat_problems.push(Problem_SAT(num_vars, clauses, reward));
+        uint problemId = sat_problems.push(Problem_SAT(msg.sender, num_vars, clauses, reward, false));
 	satToOwner[problemId] = msg.sender;
 	ownerProblemCount[msg.sender]++;
 	emit New_SAT_Problem(problemId, num_vars, reward);
 	return problemId;
+    }
+    
+    function get_SATProblem_info(uint problemId) view public returns (uint num_vars, uint reward, address issuer) {
+        require(problemId < sat_problems.length);
+        Problem_SAT memory problem = sat_problems[problemId];
+        return (problem.num_vars, problem.reward, problem.issuer);
+    }
+    
+    function get_SATProblem_clauses(uint problemId) view public returns (uint num_vars, string clauses) {
+        require(problemId < sat_problems.length);
+        Problem_SAT memory problem = sat_problems[problemId];
+        return (problem.num_vars, problem.clauses);
     }
 }
