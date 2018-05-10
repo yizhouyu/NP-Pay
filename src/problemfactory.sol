@@ -24,7 +24,7 @@ contract ProblemFactory is Ownable {
     event New_SAT_Problem(uint problemId, uint num_vars, uint num_clauses, uint reward);
     
     // stores all problems that have been proposed
-    Problem_SAT[] public sat_problems;
+    Problem_SAT[] internal sat_problems;
     
     // mapping from problem id to its issuer
     mapping (uint => address) public satToOwner;
@@ -42,9 +42,10 @@ contract ProblemFactory is Ownable {
     	return problemId;
     }
     
-    function get_SATProblem_info(uint problemId) view public returns (uint num_vars, uint num_clauses, uint reward, address issuer) {
+    function get_SATProblem_info(uint problemId) view public 
+        returns (address issuer, string url, bytes32 problem_hash, uint num_vars, uint num_clauses, uint reward, bool solved) {
         require(problemId < sat_problems.length);
-        Problem_SAT memory problem = sat_problems[problemId];
-        return (problem.num_vars, problem.num_clauses, problem.reward, problem.issuer);
+        Problem_SAT memory P = sat_problems[problemId];
+        return (P.issuer, P.url, P.problem_hash, P.num_vars, P.num_clauses, P.reward, P.solved);
     }
 }
