@@ -9,46 +9,42 @@ contract ProblemFactory is Ownable {
     // limit on the number of unsolved problems that an address can issue.  
     uint problem_limit = 5;
     
+    // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
     struct Problem_SAT {
         address issuer;
+        string url; // url to the problem stored on server
+        bytes32 problem_hash; // hash of the problem
         uint num_vars;
-	// clauses: 0: exist, negated; 1: exist, regular; 2: not exist
-	string clauses;
-	uint reward;
-	// whether or not the problem has already been solved
-	bool solved; 
+        uint num_clauses;
+        uint reward;
+    	// whether or not the problem has already been solved
+    	bool solved; 
     }
 
-    event New_SAT_Problem(uint problemId, uint num_vars, uint reward);
+    event New_SAT_Problem(uint problemId, uint num_vars, uint num_clauses, uint reward);
     
     // stores all problems that have been proposed
     Problem_SAT[] public sat_problems;
-
-    // number of problems that the owner has issued
-    mapping (address => uint) ownerProblemCount; 
+    
     // mapping from problem id to its issuer
     mapping (uint => address) public satToOwner;
+    // number of problems that the owner has issued
+    mapping (address => uint) ownerProblemCount; 
 
     // issue an SAT problem to the market. Returns the id of the problem.
-    function createSATProblem(uint num_vars, string clauses, uint reward) public payable returns (uint) {
+    function createSATProblem(string url, bytes32 problem_hash, uint num_vars, uint num_clauses, uint reward) public payable returns (uint) {
         require(msg.value >= reward + problem_issue_cost);
         require(ownerProblemCount[msg.sender] < problem_limit);
-        uint problemId = sat_problems.push(Problem_SAT(msg.sender, num_vars, clauses, reward, false));
-	satToOwner[problemId] = msg.sender;
-	ownerProblemCount[msg.sender]++;
-	emit New_SAT_Problem(problemId, num_vars, reward);
-	return problemId;
+        uint problemId = sat_problems.push(Problem_SAT(msg.sender, url, problem_hash, num_vars, num_clauses, reward, false));
+    	satToOwner[problemId] = msg.sender;
+    	ownerProblemCount[msg.sender]++;
+    	emit New_SAT_Problem(problemId, num_vars, num_clauses, reward);
+    	return problemId;
     }
     
-    function get_SATProblem_info(uint problemId) view public returns (uint num_vars, uint reward, address issuer) {
+    function get_SATProblem_info(uint problemId) view public returns (uint num_vars, uint num_clauses, uint reward, address issuer) {
         require(problemId < sat_problems.length);
         Problem_SAT memory problem = sat_problems[problemId];
-        return (problem.num_vars, problem.reward, problem.issuer);
-    }
-    
-    function get_SATProblem_clauses(uint problemId) view public returns (uint num_vars, string clauses) {
-        require(problemId < sat_problems.length);
-        Problem_SAT memory problem = sat_problems[problemId];
-        return (problem.num_vars, problem.clauses);
+        return (problem.num_vars, problem.num_clauses, problem.reward, problem.issuer);
     }
 }
