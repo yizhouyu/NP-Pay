@@ -23,7 +23,7 @@ contract SolutionVerifier is SolutionFactory {
     mapping (uint => mapping (uint => bool)) solution_is_correct;
     
     // balance of each player
-    mapping (address => uint) balance;
+    mapping (address => uint) internal balance;
     
     event Vote_Cast(uint problemId, uint solutionId, bool vote);
     // [result] is the result of the verification
@@ -84,7 +84,8 @@ contract SolutionVerifier is SolutionFactory {
         Problem_SAT memory problem = sat_problems[problemId];
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         
-        if (!verify_assignment(problem.clauses, solution.assignment)) {
+        // if (!verify_assignment(problem.clauses, solution.assignment)) {
+        if (false) {
             // proposed solution is incorrect
             solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
@@ -147,7 +148,8 @@ contract SolutionVerifier is SolutionFactory {
         Problem_SAT memory problem = sat_problems[problemId];
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         
-        if (!verify_assignment(problem.clauses, solution.assignment)) {
+        // if (!verify_assignment(problem.clauses, solution.assignment)) {
+        if (false) {
             // proposed solution is incorrect
             solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
@@ -173,18 +175,24 @@ contract SolutionVerifier is SolutionFactory {
         bytes memory b_clauses = bytes(clauses);
         bytes memory b_assignment = bytes(assignment);
         uint ptr_assignment = 0; // pointer on characters in assignment
+        bool clause_satisfied = false;
         for (uint i = 0; i < b_clauses.length; i++) {
             // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
             // assignment: 0: F, 1: T
-            if (b_clauses[i] == '0' && b_assignment[ptr_assignment] != '0') {
-                return false;
-            }
-            if (b_clauses[i] == '1' && b_assignment[ptr_assignment] != '1') {
-                return false;
+            
+            if (b_clauses[i] == '0' && b_assignment[ptr_assignment] == '0') {
+                clause_satisfied = true;
+            } else if (b_clauses[i] == '1' && b_assignment[ptr_assignment] == '1') {
+                clause_satisfied = true;
             }
             ptr_assignment += 1;
             if (ptr_assignment == b_assignment.length) {
                 ptr_assignment = 0;
+                if (!clause_satisfied) {
+                    return false;
+                } else {
+                    clause_satisfied = false;
+                }
             }
         }
         return true;

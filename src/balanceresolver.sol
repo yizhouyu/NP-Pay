@@ -7,6 +7,10 @@ contract BalanceResolver is SolutionVerifier {
     // time window during which the network can vote on the solution
     uint cooldown_period = 1 minutes;
     
+    function get_balance() public view returns (uint){
+        return balance[msg.sender];
+    }
+    
     // problem solver requests to get the reward after correctly solving the problem
     function request_reward(uint problemId, uint solutionId) public {
         Problem_SAT memory problem = sat_problems[problemId];

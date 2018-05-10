@@ -26,7 +26,6 @@ contract ProblemFactory is Ownable {
     // stores all problems that have been proposed
     Problem_SAT[] internal sat_problems;
     
-    // mapping from problem id to its issuer
     mapping (uint => address) public satToOwner;
     // number of problems that the owner has issued
     mapping (address => uint) ownerProblemCount; 

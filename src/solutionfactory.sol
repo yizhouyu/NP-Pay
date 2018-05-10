@@ -19,10 +19,10 @@ contract SolutionFactory is ProblemFactory {
     }
 
     struct SATSolution {
-       string assignment;
        uint256 time_hash_proposed; // time that the hash of this solution was proposed
        uint256 time_sol_proposed; // time that this solution was proposed
        address solver; // address of the person who proposed the solution
+       string assignment;
     }
     
     // mapping from problemId to array of solution hashes
@@ -40,9 +40,16 @@ contract SolutionFactory is ProblemFactory {
     // This index represents how many people have proposed the solution hash before.
     function proposeSATSolutionHash(uint problemId, bytes32 hash) public payable returns (uint) {
         require(msg.value >= solution_hash_deposit);
+        // the problem must exist
+        require(sat_problems.length > problemId);
         // no more than max_solutions_to_record people can propose a solution hash
         require(solutionHashes_SAT[problemId].length < max_solutions_to_record);
-        uint hashId = solutionHashes_SAT[problemId].push(SATSolutionHash(hash, now, msg.sender));
+        // check that the same address has not proposed a solution hash to the same problem before
+        SATSolutionHash[] storage hashes = solutionHashes_SAT[problemId];
+        for (uint i=0; i<hashes.length; i++) {
+            require(hashes[i].solver != msg.sender);
+        }
+        uint hashId = hashes.push(SATSolutionHash(hash, now, msg.sender));
         emit SATSolutionHashProposed(problemId, hashId, now);
         return hashId;
     }
@@ -50,16 +57,18 @@ contract SolutionFactory is ProblemFactory {
     // propose the solution to the problem at problemId.
     function proposeSATSolution(uint problemId, uint hashId, string assignment) public payable returns (uint){
         require(msg.value >= solution_deposit);
+        // the problem must exist
+        require(sat_problems.length > problemId);
         // check that the hash of the solution already exists in the array of hashes
-        require(solutionHashes_SAT[problemId].length >= hashId);
+        require(solutionHashes_SAT[problemId].length > hashId);
         SATSolutionHash storage sol_hash = solutionHashes_SAT[problemId][hashId];
         // check that the solution matches the hash
         require (keccak256(assignment) == sol_hash.hash);
         // check that the caller of this function is the same person who proposed the hash 
         require(msg.sender == sol_hash.solver);
         // the hashes match, so we can record the solution now
-        // solutionId represents which index the solution is located in solutions_SAT[problemId]
-        uint solutionId = solutions_SAT[problemId].push(SATSolution(assignment, sol_hash.time_proposed, now, msg.sender));
+        // solutionId represents the index at which the solution is located in solutions_SAT[problemId]
+        uint solutionId = solutions_SAT[problemId].push(SATSolution(sol_hash.time_proposed, now, msg.sender, assignment));
         emit SATSolutionProposed(problemId, hashId, solutionId, now);
         return solutionId;
     }
