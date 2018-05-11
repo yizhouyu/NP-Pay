@@ -196,13 +196,13 @@ contract SolutionVerifier is SolutionFactory {
     }
     
     // run verification on-chain. Check whether [assignment] satisfies [clause].
+    // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
+    // assignment: binary string, 0: F, 1: T
     function verify_assignment(string clause, string assignment) public pure returns (bool) {
         // convert assignment string to array
         bytes memory b_clause = bytes(clause);
         bytes memory b_assignment = bytes(assignment);
         for (uint i = 0; i < b_clause.length; i++) {
-            // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
-            // assignment: 0: F, 1: T
             if ((b_clause[i] == '0' && b_assignment[i] == '0')||(b_clause[i] == '1' && b_assignment[i] == '1')) {
                 return true;
             }
