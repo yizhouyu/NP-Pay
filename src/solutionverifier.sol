@@ -12,6 +12,8 @@ contract SolutionVerifier is SolutionFactory {
     uint min_votes_to_auto_trigger = 7500;
     uint min_time_to_auto_trigger = 24 hours;
     uint trigger_reward_div = 10; // divide reward by trigger_reward_div
+    
+    string server_url = "todo.com"; //TODO
 
     // mapping from problemId to [mapping from solutionId to addresses of up votes]
     mapping (uint => mapping (uint => address[])) upvotes_SAT; 
@@ -100,11 +102,10 @@ contract SolutionVerifier is SolutionFactory {
         uint num_downvotes = down_voter_addresses.length;
         uint total_votes = num_upvotes + num_downvotes;
         
-        Problem_SAT memory problem = sat_problems[problemId];
+        string memory clause = read_clause_from_url(server_url, 1);
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         
-        // if (!verify_assignment(problem.clauses, solution.assignment)) {
-        if (false) {
+        if (!verify_assignment(clause, solution.assignment)) {
             // proposed solution is incorrect
             solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
@@ -164,11 +165,10 @@ contract SolutionVerifier is SolutionFactory {
         uint num_downvotes = down_voter_addresses.length;
         uint total_votes = num_upvotes + num_downvotes;
         
-        Problem_SAT memory problem = sat_problems[problemId];
+        string memory clause = read_clause_from_url(server_url, 1);
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         
-        // if (!verify_assignment(problem.clauses, solution.assignment)) {
-        if (false) {
+        if (!verify_assignment(clause, solution.assignment)) {
             // proposed solution is incorrect
             solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
@@ -188,8 +188,30 @@ contract SolutionVerifier is SolutionFactory {
         solution_is_verified[problemId][solutionId] = true;
     }
     
+    // TODO
+    function read_clause_from_url(string url, uint clause_no) private pure returns (string) {
+        url = "";
+        clause_no = 0;
+        return "102";
+    }
+    
+    // run verification on-chain. Check whether [assignment] satisfies [clause].
+    function verify_assignment(string clause, string assignment) public pure returns (bool) {
+        // convert assignment string to array
+        bytes memory b_clause = bytes(clause);
+        bytes memory b_assignment = bytes(assignment);
+        for (uint i = 0; i < b_clause.length; i++) {
+            // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
+            // assignment: 0: F, 1: T
+            if ((b_clause[i] == '0' && b_assignment[i] == '0')||(b_clause[i] == '1' && b_assignment[i] == '1')) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     // run verification on-chain. Check whether [assignment] satisfies [clauses].
-    function verify_assignment(string clauses, string assignment) public pure returns (bool) {
+    function verify_assignment_old(string clauses, string assignment) public pure returns (bool) {
         // convert assignment string to array
         bytes memory b_clauses = bytes(clauses);
         bytes memory b_assignment = bytes(assignment);
