@@ -141,6 +141,7 @@ li span {
   /* padding-right: 30px;  */
   /*sets 'padding'*/
   font-size: 15px;
+  border-radius: 20px;
 }
 
 .bg {
@@ -171,37 +172,6 @@ li span {
   position: absolute;
   display: inline-block;
   /* vertical-align: top; */
-}
-
-/* Graphs */
-#accuracy_by_distance {
-  display: inline-block;
-}
-
-/* KEYS */
-
-#accuracy_by_downkey {
-  /* margin-top: 100px !important; */
-  margin-left: 0px;
-}
-
-#accuracy_by_distancekey {
-  /* margin-top: 100px !important; */
-  margin-left: 0px;
-}
-
-#accuracy_by_pointkey {
-  /* margin-top: 25px !important; */
-}
-
-#qb_effectivenesskey {
-  /* margin-top: 25px !important; */
-  /* margin-top: 100px !important; */
-  margin-left: 0px;
-}
-
-#accuracy_by_pointkey .key {
-  margin-left: 0px !important;
 }
 
 /* D3 Elements */

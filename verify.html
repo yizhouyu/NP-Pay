@@ -6,6 +6,8 @@
 
 <link rel="stylesheet" type="text/css" href="style.css">
 
+<script src="bundle.js"></script>
+
 <!-- FONTS -->
 <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Muli|Nanum+Gothic|Open+Sans+Condensed:300|Open+Sans:300,400" rel="stylesheet">
@@ -20,53 +22,62 @@
 <body>
   <nav class="navbar navbar-default navbar-fixed-top navbar-light"
   style="background-color: #f7931a;border:none;">
-    <div class="container-fluid">
-      <div class="navbar-header navbar-light" style="background-color: #f7931a;">
-        <a class="navbar-brand" href="index.html">
-          <img alt="Brand" src="img/icon.png">
-        </a>
-        <p class="navbar-text" id ="navbar-title" style="font-weight:900;color:white">NP-Pay</p>
-      </div>
-      <ul class="nav navbar-nav navbar-right">
-        <li>
-          <a href="login.html" class="navbar-brand" id ="navbar-title">Login
-          </a>
-        </li>
-      </ul>
+  <div class="container-fluid">
+    <div class="navbar-header navbar-light" style="background-color: #f7931a;">
+      <a class="navbar-brand" href="index.html">
+        <img alt="Brand" src="img/icon.png">
+      </a>
+      <p class="navbar-text" id ="navbar-title" style="font-weight:900;color:white">NP-Pay</p>
     </div>
-  </nav>
-
-      <div id="container">
-
-        <!-- HEADER TEXT -->
-        <div class="headerDiv" id="div-border">
-        <h1 id="h1-title">
-          Verify a Solution
-        </h1>
-      </br>
-      <h3 id="h3-title">Validate Solutions and Gain Rewards</h3></br>
+    <ul class="nav navbar-nav navbar-right">
+      <li>
+        <a href="login.html" class="navbar-brand" id ="navbar-title">Login
+        </a>
+      </li>
+    </ul>
   </div>
+</nav>
 
-  <!-- </br></br></br> -->
-  <!-- <div class="innerDivButtons">
-    <a id="mainButton" href="problem.html">
-      Issue a Problem</br></br>
-      <img id="mainIcon" src="img/upload.png"/>
-    </a>
-    <a id="mainButton" href="solve.html">
-      Solve a Problem</br></br>
-      <img id="mainIcon" src="img/solve.png"/>
-    </a>
-    <a id="mainButton" href="verify.html">
-      Verify a Problem</br></br>
-      <img id="mainIcon" src="img/verify.png"/>
-    </a>
-  </div>
-  <div class="innerDiv">
-    <h3 id="h3-title">How it works</h3>
+<div id="container">
+
+  <!-- HEADER TEXT -->
+  <div class="headerDiv" id="div-border">
+    <h1 id="h1-title">
+      Verify a Solution
+    </h1>
   </br>
-    <p id="para">Details</p>
-  </div> -->
+  <h3 id="h3-title">Validate Solutions and Gain Rewards</h3></br>
+</div>
+
+<div class="innerDiv">
+  <h2>Please Provide Verification Vote Information</h2></br>
+  <form class="form-horizontal" action="" onsubmit="return submitVerification(this)">
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="pid" placeholder="Enter Problem ID" name="pid">
+    </div>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="sid" placeholder="Enter Solution ID" name="sid">
+    </div>
+    <div class="col-sm-10">
+    <p></br>Vote Type:</p>
+    <label class="checkbox-inline">
+      <input type="checkbox" value=""></br>Yes
+    </label>
+    <label class="checkbox-inline">
+      <input type="checkbox" value=""></br>No
+    </label>
+  </div>
+    <div class="col-sm-10">
+      </br>
+      <input type="text" class="form-control" id="wrongClause" placeholder="If no, which clause is wrong?" name="wrongClause">
+    </div>
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <button type="submit" class="btn btn-default">Vote!</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 </body>
 </html>
