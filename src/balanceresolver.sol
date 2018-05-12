@@ -7,13 +7,16 @@ contract BalanceResolver is SolutionVerifier {
     // minimum time window during which the network can vote on the solution
     uint cooldown_period = 1 minutes;
     
+    // final solution to problems
+    mapping (uint => string) final_solution;
+    
     // returns the money that the address is entitled to
     function get_balance() public view returns (uint){
         return balance[msg.sender];
     }
     
     // problem solver requests to get the reward after correctly solving the problem
-    function request_reward(uint problemId, uint solutionId) public {
+    function request_reward_old(uint problemId, uint solutionId) public {
         // the problem must exist
         require(sat_problems.length > problemId);
         // the solution must exist
@@ -24,14 +27,16 @@ contract BalanceResolver is SolutionVerifier {
         require(solution.solver == msg.sender);
         // cooldown period must have passed
         require(solution.time_sol_proposed + cooldown_period < now);
+        // reward cannot have been already given to another solver
         require (!problem.solved);
-        // TODO check that the solution is proposed the first
         bool verified_and_correct = solution_is_verified[problemId][solutionId] && solution_is_correct[problemId][solutionId];
-        bool no_dissent = (downvotes_SAT[problemId][solutionId].length == 0);
-        if (verified_and_correct || no_dissent) {
+        bool has_up_votes = (upvotes_SAT[problemId][solutionId].length > 0);
+        bool no_down_vote = (downvotes_SAT[problemId][solutionId].length == 0);
+        if (verified_and_correct || (has_up_votes && no_down_vote)) {
             balance[solution.solver] += problem.reward;
             problem.solved = true;
-            if (no_dissent) {
+            final_solution[problemId] = solution.assignment;
+            if (no_down_vote) {
                 // return vote deposit to up-voters
                 address[] memory up_voters = upvotes_SAT[problemId][solutionId];
                 for (uint i = 0; i<up_voters.length; i++) {
@@ -39,6 +44,15 @@ contract BalanceResolver is SolutionVerifier {
                 }
             }
         }
+    }
+    
+    // returns the solution of the problem
+    function get_solution(uint problemId) public view returns (string){
+        // the problem must exist
+        require(sat_problems.length > problemId);
+        // problem must have been solved
+        require(sat_problems[problemId].solved);
+        return final_solution[problemId];
     }
     
     // retrieve money from balance
