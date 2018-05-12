@@ -54,7 +54,18 @@ contract SolutionVerifier is SolutionFactory {
 	    } else {
 	        // vote against the solution
 	        downvotes_SAT[problemId][solutionId].push(msg.sender);
-	        evidence_against_solution[problemId][solutionId].push(evidence);
+	        uint[] storage evidences = evidence_against_solution[problemId][solutionId];
+	        // go through evidences to make sure that the evidence has never been proposed before
+	        bool evidence_already_proposed = false;
+	        for (uint i = 0; i < evidences.length; i++){
+	            if (evidences[i] == evidence) {
+	                evidence_already_proposed = true;
+	                break;
+	            }
+	        }
+	        if (!evidence_already_proposed) {
+	            evidences.push(evidence);
+	        }
 	    }
 	    emit Vote_Cast(problemId, solutionId, vote_up, msg.sender);
 	
@@ -192,13 +203,20 @@ contract SolutionVerifier is SolutionFactory {
         return "102";
     }
     
-     // precondition: valid problemId and solutionId
+    // check whether solutions_SAT[problemId][solutionId] is a valid solution by 
+    // checking it against all the evidence proposed by down-voters
+    // precondition: valid problemId and solutionId
     function verify_solution(uint problemId, uint solutionId) view private returns (bool) {
-        uint evidence = evidence_against_solution[problemId][solutionId][0];
-        string memory clause = read_clause_from_url(server_url, evidence);
-        SATSolution memory solution = solutions_SAT[problemId][solutionId];
-        bool result = verify_assignment(clause, solution.assignment);
-        return result;
+        uint[] memory evidences = evidence_against_solution[problemId][solutionId];
+        string memory sol = solutions_SAT[problemId][solutionId].assignment;
+        for (uint i = 0; i < evidences.length; i++) {
+            uint evidence = evidences[i];
+            string memory clause = read_clause_from_url(server_url, evidence);
+            if (!verify_assignment(clause, sol)) {
+                return false;
+            }
+        }
+        return true;
     }
     
     // run verification on-chain. Check whether [assignment] satisfies [clause].
