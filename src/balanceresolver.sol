@@ -13,12 +13,17 @@ contract BalanceResolver is SolutionVerifier {
     
     // problem solver requests to get the reward after correctly solving the problem
     function request_reward(uint problemId, uint solutionId) public {
+        // the problem must exist
+        require(sat_problems.length > problemId);
+        // the solution must exist
+        require(solutions_SAT[problemId].length > solutionId);
         Problem_SAT memory problem = sat_problems[problemId];
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         // caller must be the one who proposed the solution
         require(solution.solver == msg.sender);
         // cooldown period must have passed
         require(solution.time_sol_proposed + cooldown_period < now);
+        require (!problem.solved);
         // TODO check that the solution is proposed the first
         bool verified_and_correct = solution_is_verified[problemId][solutionId] && solution_is_correct[problemId][solutionId];
         bool no_dissent = (downvotes_SAT[problemId][solutionId].length == 0);
@@ -35,5 +40,4 @@ contract BalanceResolver is SolutionVerifier {
         balance[msg.sender] = 0;
         msg.sender.transfer(amt);
     }
-    
 }
