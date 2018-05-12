@@ -12,10 +12,15 @@ contract SolutionVerifier is SolutionFactory {
     uint min_votes_to_auto_trigger = 7500;
     uint min_time_to_auto_trigger = 24 hours;
     uint trigger_reward_div = 10; // divide reward by trigger_reward_div
+    
+    string server_url = "todo.com"; //TODO
 
     // mapping from problemId to [mapping from solutionId to addresses of up votes]
     mapping (uint => mapping (uint => address[])) upvotes_SAT; 
     mapping (uint => mapping (uint => address[])) downvotes_SAT;
+    // mapping from problemId to [mapping from solutionId to evidence]
+    // evidence provided down-voters about which clause is unsatisfied by the solution assignment
+    mapping (uint => mapping (uint => uint[])) evidence_against_solution;
     
     // whether the on-chain verification has been triggered and run on-chain
     mapping (uint => mapping (uint => bool)) solution_is_verified;
@@ -25,50 +30,66 @@ contract SolutionVerifier is SolutionFactory {
     // balance of each player
     mapping (address => uint) internal balance;
     
-    event Vote_Cast(uint problemId, uint solutionId, bool vote);
+    event Vote_Cast(uint problemId, uint solutionId, bool vote, address voter);
     // [result] is the result of the verification
     event Verification_Performed(uint problemId, uint solutionId, bool result);
-
+    
+    // vote on the solution
     // if trigger_verify -> trigger verification on chain
-    function vote_SAT(uint problemId, uint solutionId, bool vote_up, bool trigger_verify) public payable {
+    // need to provide evidence if you want to vote against the solution, and indicate which clause is unsatisfied by the solution assignment
+    function vote_SAT(uint problemId, uint solutionId, uint evidence, bool trigger_verify, bool vote_up) public payable {
+        // the problem must exist
+        require(sat_problems.length > problemId);
+        // the solution must exist
+        require(solutions_SAT[problemId].length > solutionId);
         // cannot vote after the verification function has been called
         require(!solution_is_verified[problemId][solutionId]);
         require(msg.value >= vote_deposit);
-	if (vote_up) {
-	    // vote for the solution
-	    upvotes_SAT[problemId][solutionId].push(msg.sender);
-	} else {
-	    // vote against the solution
-	    downvotes_SAT[problemId][solutionId].push(msg.sender);
-	}
-	emit Vote_Cast(problemId, solutionId, vote_up);
+        if (vote_up) {
+	        // vote for the solution
+	        upvotes_SAT[problemId][solutionId].push(msg.sender);
+	    } else {
+	        // vote against the solution
+	        downvotes_SAT[problemId][solutionId].push(msg.sender);
+	        evidence_against_solution[problemId][solutionId].push(evidence);
+	    }
+	    emit Vote_Cast(problemId, solutionId, vote_up, msg.sender);
 	
-	if (trigger_verify) {
-	    require(can_trigger_manual_verification(problemId, solutionId));
-	    trigger_manual_verification(problemId, solutionId, vote_up);
-	} else if (can_trigger_auto_verification(problemId, solutionId)){
-	    trigger_auto_verification(problemId, solutionId);
-	}
+    	if (trigger_verify) {
+    	    require(can_trigger_manual_verification(problemId, solutionId));
+    	    trigger_manual_verification(problemId, solutionId, vote_up);
+    	} else if (can_trigger_auto_verification(problemId, solutionId)){
+    	    trigger_auto_verification(problemId, solutionId);
+    	}
     }
     
-    // whether conditions for a manual trigger of verification are met
+    /*
+        whether conditions for a manual trigger of verification are met
+         i.e. if both of the following two conditions are met:
+         1. There are voters who voted up and voters who voted down
+         2. The total number of votes is greater than min_votes_to_manual_trigger
+    */ 
     function can_trigger_manual_verification(uint problemId, uint solutionId) public view returns (bool) {
         uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
         uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
         // require that there is disagreement among voters
         bool condition_1 = num_upvotes>0 && num_downvotes>0;
-        uint total_votes = num_upvotes + num_downvotes;
-        bool condition_2 = total_votes > min_votes_to_manual_trigger;
+        bool condition_2 = (num_upvotes + num_downvotes > min_votes_to_manual_trigger);
         return (condition_1 && condition_2);
     }
     
+    /*
+        whether conditions for a manual trigger of verification are met
+         i.e. if either of the following two conditions is met:
+         1. Vote condition: the total number of votes is greater than min_votes_to_auto_trigger
+         2. Time condiion: min_time_to_auto_trigger has passed since the solution was put forward to be voted on
+    */ 
     function can_trigger_auto_verification(uint problemId, uint solutionId) public view returns (bool) {
-        SATSolution memory solution = solutions_SAT[problemId][solutionId];
         uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
         uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
-        uint total_votes = num_upvotes + num_downvotes;
-        bool condition_1 = (total_votes > min_time_to_auto_trigger); // vote condition
-        bool condition_2 = (now - solution.time_sol_proposed > 1 days); // time condition
+        bool condition_1 = (num_upvotes + num_downvotes > min_votes_to_auto_trigger); // vote condition
+        SATSolution memory solution = solutions_SAT[problemId][solutionId];
+        bool condition_2 = (now - solution.time_sol_proposed > min_time_to_auto_trigger); // time condition
         return (condition_1 || condition_2);
     }
     
@@ -81,11 +102,10 @@ contract SolutionVerifier is SolutionFactory {
         uint num_downvotes = down_voter_addresses.length;
         uint total_votes = num_upvotes + num_downvotes;
         
-        Problem_SAT memory problem = sat_problems[problemId];
+        string memory clause = read_clause_from_url(server_url, 1);
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         
-        // if (!verify_assignment(problem.clauses, solution.assignment)) {
-        if (false) {
+        if (!verify_assignment(clause, solution.assignment)) {
             // proposed solution is incorrect
             solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
@@ -145,11 +165,10 @@ contract SolutionVerifier is SolutionFactory {
         uint num_downvotes = down_voter_addresses.length;
         uint total_votes = num_upvotes + num_downvotes;
         
-        Problem_SAT memory problem = sat_problems[problemId];
+        string memory clause = read_clause_from_url(server_url, 1);
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
         
-        // if (!verify_assignment(problem.clauses, solution.assignment)) {
-        if (false) {
+        if (!verify_assignment(clause, solution.assignment)) {
             // proposed solution is incorrect
             solution_is_correct[problemId][solutionId] = false;
             emit Verification_Performed(problemId, solutionId, false);
@@ -169,8 +188,30 @@ contract SolutionVerifier is SolutionFactory {
         solution_is_verified[problemId][solutionId] = true;
     }
     
+    // TODO
+    function read_clause_from_url(string url, uint clause_no) private pure returns (string) {
+        url = "";
+        clause_no = 0;
+        return "102";
+    }
+    
+    // run verification on-chain. Check whether [assignment] satisfies [clause].
+    // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
+    // assignment: binary string, 0: F, 1: T
+    function verify_assignment(string clause, string assignment) public pure returns (bool) {
+        // convert assignment string to array
+        bytes memory b_clause = bytes(clause);
+        bytes memory b_assignment = bytes(assignment);
+        for (uint i = 0; i < b_clause.length; i++) {
+            if ((b_clause[i] == '0' && b_assignment[i] == '0')||(b_clause[i] == '1' && b_assignment[i] == '1')) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     // run verification on-chain. Check whether [assignment] satisfies [clauses].
-    function verify_assignment(string clauses, string assignment) public pure returns (bool) {
+    function verify_assignment_old(string clauses, string assignment) public pure returns (bool) {
         // convert assignment string to array
         bytes memory b_clauses = bytes(clauses);
         bytes memory b_assignment = bytes(assignment);
