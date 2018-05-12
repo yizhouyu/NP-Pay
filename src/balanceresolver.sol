@@ -4,9 +4,10 @@ import "./solutionverifier.sol";
 
 contract BalanceResolver is SolutionVerifier {
     
-    // time window during which the network can vote on the solution
+    // minimum time window during which the network can vote on the solution
     uint cooldown_period = 1 minutes;
     
+    // returns the money that the address is entitled to
     function get_balance() public view returns (uint){
         return balance[msg.sender];
     }
@@ -30,8 +31,14 @@ contract BalanceResolver is SolutionVerifier {
         if (verified_and_correct || no_dissent) {
             balance[solution.solver] += problem.reward;
             problem.solved = true;
+            if (no_dissent) {
+                // return vote deposit to up-voters
+                address[] memory up_voters = upvotes_SAT[problemId][solutionId];
+                for (uint i = 0; i<up_voters.length; i++) {
+                    balance[up_voters[i]] += vote_deposit;
+                }
+            }
         }
-        // return deposit to voters
     }
     
     // retrieve money from balance
