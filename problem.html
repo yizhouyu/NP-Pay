@@ -4,6 +4,8 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 
+<script src="bundle.js"></script>
+
 <link rel="stylesheet" type="text/css" href="style.css">
 
 <!-- FONTS -->
@@ -20,53 +22,59 @@
 <body>
   <nav class="navbar navbar-default navbar-fixed-top navbar-light"
   style="background-color: #f7931a;border:none;">
-    <div class="container-fluid">
-      <div class="navbar-header navbar-light" style="background-color: #f7931a;">
-        <a class="navbar-brand" href="index.html">
-          <img alt="Brand" src="img/icon.png">
-        </a>
-        <p class="navbar-text" id ="navbar-title" style="font-weight:900;color:white">NP-Pay</p>
-      </div>
-      <ul class="nav navbar-nav navbar-right">
-        <li>
-          <a href="login.html" class="navbar-brand" id ="navbar-title">Login
-          </a>
-        </li>
-      </ul>
+  <div class="container-fluid">
+    <div class="navbar-header navbar-light" style="background-color: #f7931a;">
+      <a class="navbar-brand" href="index.html">
+        <img alt="Brand" src="img/icon.png">
+      </a>
+      <p class="navbar-text" id ="navbar-title" style="font-weight:900;color:white">NP-Pay</p>
     </div>
-  </nav>
-
-      <div id="container">
-
-        <!-- HEADER TEXT -->
-        <div class="headerDiv" id="div-border">
-        <h1 id="h1-title">
-          Issue a Problem
-        </h1>
-      </br>
-      <h3 id="h3-title">Send a SAT Problem to the Ethereum Network</h3></br>
+    <ul class="nav navbar-nav navbar-right">
+      <li>
+        <a href="login.html" class="navbar-brand" id ="navbar-title">Login
+        </a>
+      </li>
+    </ul>
   </div>
+</nav>
 
-  <!-- </br></br></br> -->
-  <!-- <div class="innerDivButtons">
-    <a id="mainButton" href="problem.html">
-      Issue a Problem</br></br>
-      <img id="mainIcon" src="img/upload.png"/>
-    </a>
-    <a id="mainButton" href="solve.html">
-      Solve a Problem</br></br>
-      <img id="mainIcon" src="img/solve.png"/>
-    </a>
-    <a id="mainButton" href="verify.html">
-      Verify a Problem</br></br>
-      <img id="mainIcon" src="img/verify.png"/>
-    </a>
-  </div>
-  <div class="innerDiv">
-    <h3 id="h3-title">How it works</h3>
+<div id="container">
+
+  <!-- HEADER TEXT -->
+  <div class="headerDiv" id="div-border">
+    <h1 id="h1-title">
+      Issue a Problem
+    </h1>
   </br>
-    <p id="para">Details</p>
-  </div> -->
+  <h3 id="h3-title">Send a SAT Problem to the Ethereum Network</h3></br>
+</div>
+<div class="innerDiv">
+    <h2>Please Provide Problem Metadata</h2></br>
+    <form class="form-horizontal" action="" onsubmit="return submitProblem(this)">
+      <div class="col-sm-10">
+        <!-- <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span> -->
+        <input type="text" class="form-control" id="pstring" placeholder="Enter SAT Problem String" name="pstring">
+      </div>
+      <!-- <label class="control-label col-sm-2" for="pwd">Num Vars: </label></br></br> -->
+      <div class="col-sm-10">
+        <input type="text" class="form-control" id="vars" placeholder="Enter Number of Variables in SAT Problem" name="vars">
+      </div>
+      <!-- <label class="control-label col-sm-2" for="pwd">Reward: </label></br> -->
+      <div class="col-sm-10">
+        <input type="text" class="form-control" id="clauses" placeholder="Enter Number of Clauses in SAT Problem" name="clauses">
+      </div>
+      <!-- <label class="control-label col-sm-2" for="pwd">Reward: </label></br> -->
+      <div class="col-sm-10">
+        <input type="text" class="form-control" id="reward" placeholder="Enter Reward for Problem" name="reward">
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Submit</button>
+        </div>
+    </form>
+  </div>
+</div>
+</div>
 
 </body>
 </html>
