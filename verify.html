@@ -45,7 +45,7 @@
 
     //hash
     var hash = keccak256(solString);
-    var hash_bytes = web3.fromAscii(hash);
+    var hash_bytes = "0x" + hash;
 
     var hashId;
     nppay.methods.proposeSATSolutionHash(pId, hash_bytes)

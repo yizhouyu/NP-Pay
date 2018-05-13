@@ -48,7 +48,7 @@
 
     //hash
     var hash = keccak256(solString);
-    var hash_bytes = str_to_byte32(hash);
+    var hash_bytes = "0x" + hash;
 
     var hashId;
     nppay.methods.proposeSATSolutionHash(pId, hash_bytes)
@@ -62,18 +62,6 @@
       .then(function(id) {
         hashId = id;
       })
-  }
-
-  function str_to_byte32(str) {
-    // var converted_bytes = [];
-    var converted_bytes = new Uint8Array(32);
-    for (var i = 0; i < str.length; i += 2) {
-      var sub_str = str.substring(i, i+2);
-      var b = parseInt(sub_str, 16) & (0xFF);
-      // converted_bytes.push(b);
-      converted_bytes[i/2] = b;
-    }
-    return converted_bytes;
   }
 
   function issueSolution(pId, hashId, solString){

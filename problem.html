@@ -26,12 +26,11 @@
   <script>
   // keccak256 = require('js-sha3').keccak256;
   var nppay;
-  var userAccount;
+  // var userAccount;
 
   function startApp(){
     nppay = new web3js.eth.Contract(abi, nppayAddr);
     // userAccount = web3.eth.accounts[0];
-    userAccount  = "0x174f58A431A8D2Be1E1e58265bb63801caAEddcb";
     // var accountInterval = setInterval(function() {
     //   if (web3.eth.accounts[0] !== userAccount) {
     //     userAccount = web3.eth.accounts[0];
@@ -53,7 +52,7 @@
 
     //hash
     var hash = keccak256(pString);
-    var hash_bytes = str_to_byte32(hash);
+    var hash_bytes = "0x" + hash;
 
     nppay.methods.createSATProblem("", hash_bytes, numVars, numClauses, reward)
     .send({from: userAccount, value: web3js.utils.toWei(reward.toString(), "ether")})
@@ -64,16 +63,6 @@
       }).then(function (result) {
         console.log(result);
       });
-  }
-
-  function str_to_byte32(str) {
-    var converted_bytes = [];
-    for (var i = 0; i < str.length; i += 2) {
-      var sub_str = str.substring(i, i+2);
-      var b = parseInt(sub_str, 16) & (255);
-      converted_bytes.push(b);
-    }
-    return converted_bytes;
   }
 
   window.addEventListener('load', function() {
