@@ -1,3 +1,5 @@
+var nppayAddr = '0x43Ee8229Ed1BEe11706b806812447854FAc3b287';
+
 var abi = [
 	{
 		"constant": true,
@@ -23,6 +25,24 @@ var abi = [
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "problemId",
+				"type": "uint256"
+			},
+			{
+				"name": "solutionId",
+				"type": "uint256"
+			}
+		],
+		"name": "request_reward",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [
 			{
@@ -43,6 +63,25 @@ var abi = [
 		],
 		"payable": false,
 		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "problemId",
+				"type": "uint256"
+			}
+		],
+		"name": "get_solution",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -100,24 +139,6 @@ var abi = [
 		],
 		"payable": false,
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "problemId",
-				"type": "uint256"
-			},
-			{
-				"name": "solutionId",
-				"type": "uint256"
-			}
-		],
-		"name": "request_reward_old",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{

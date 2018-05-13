@@ -45,7 +45,8 @@ contract BalanceResolver is SolutionVerifier {
             }
         }
         // return deposit to voters of other solutions of the same problem
-        // no matter what they voted
+        // no matter what they voted, as long as no veriication has been 
+        // previously triggered on the solution
         for (uint s = 0; i<solutions_SAT[problemId].length; i++) {
             if (s == solutionId || solution_is_verified[problemId][s]) {
                 continue;

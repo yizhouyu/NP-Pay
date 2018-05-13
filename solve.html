@@ -28,12 +28,9 @@
   var userAccount;
 
   function startApp(){
-    var nppayAddr = '0x43Ee8229Ed1BEe11706b806812447854FAc3b287';
     nppay = new web3js.eth.Contract(abi, nppayAddr);
 
     userAccount  = "0x174f58A431A8D2Be1E1e58265bb63801caAEddcb";
-
-    console.log(nppay);
   }
 
   function wait(ms){

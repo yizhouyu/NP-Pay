@@ -29,16 +29,9 @@
   var userAccount;
 
   function startApp(){
-    // var web3 = new Web3( new Web3.providers.HttpProvider("http://127.0.0.1:7545"));
-    var nppayAddr = '0x43Ee8229Ed1BEe11706b806812447854FAc3b287';
-    // nppay = web3.eth.contract(abi).at(nppayAddr);
     nppay = new web3js.eth.Contract(abi, nppayAddr);
     // userAccount = web3.eth.accounts[0];
     userAccount  = "0x174f58A431A8D2Be1E1e58265bb63801caAEddcb";
-    // console.log(nppay);
-    // nppay = nppay.options.address('0x43Ee8229Ed1BEe11706b806812447854FAc3b287');
-    // console.log(nppay);
-
     // var accountInterval = setInterval(function() {
     //   if (web3.eth.accounts[0] !== userAccount) {
     //     userAccount = web3.eth.accounts[0];
@@ -60,11 +53,6 @@
 
     //hash
     var hash = keccak256(pString);
-    // var hash_bytes = [];
-    // var buffer = new Buffer(hash, 'utf16le');
-    // for (var i = 0; i < buffer.length; i++) {
-    //   hash_bytes.push(buffer[i]);
-    // }
     var hash_bytes = str_to_byte32(hash);
 
     nppay.methods.createSATProblem("", hash_bytes, numVars, numClauses, reward)
@@ -76,7 +64,6 @@
       }).then(function (result) {
         console.log(result);
       });
-    // return;
   }
 
   function str_to_byte32(str) {
