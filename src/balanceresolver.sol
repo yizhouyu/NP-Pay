@@ -16,7 +16,7 @@ contract BalanceResolver is SolutionVerifier {
     }
     
     // problem solver requests to get the reward after correctly solving the problem
-    function request_reward_old(uint problemId, uint solutionId) public {
+    function request_reward(uint problemId, uint solutionId) public {
         // the problem must exist
         require(sat_problems.length > problemId);
         // the solution must exist
@@ -41,6 +41,22 @@ contract BalanceResolver is SolutionVerifier {
                 address[] memory up_voters = upvotes_SAT[problemId][solutionId];
                 for (uint i = 0; i<up_voters.length; i++) {
                     balance[up_voters[i]] += vote_deposit;
+                }
+            }
+        }
+        // return deposit to voters of other solutions of the same problem
+        // no matter what they voted
+        for (uint s = 0; i<solutions_SAT[problemId].length; i++) {
+            if (s == solutionId || solution_is_verified[problemId][s]) {
+                continue;
+            } else {
+                up_voters = upvotes_SAT[problemId][s];
+                for (i = 0; i < up_voters.length; i++) {
+                    balance[up_voters[i]] += vote_deposit;
+                }
+                address[] memory down_voters = downvotes_SAT[problemId][s];
+                for (i = 0; i < down_voters.length; i++) {
+                    balance[down_voters[i]] += vote_deposit;
                 }
             }
         }
