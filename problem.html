@@ -4,8 +4,10 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 
-<script src="formScript.js"></script>
-<!-- <script src="bundle.js"></script> -->
+<!-- <script src="formScript.js"></script> -->
+<script language="javascript" type="text/javascript" src="web3.min.js"></script>
+<script src="abi.js"></script>
+<script src="node_modules/js-sha3/src/sha3.js"></script>
 
 <link rel="stylesheet" type="text/css" href="style.css">
 
@@ -21,6 +23,85 @@
   <title>NP-Pay</title>
 </head>
 <body>
+  <script>
+  // keccak256 = require('js-sha3').keccak256;
+  var nppay;
+  var userAccount;
+
+  function startApp(){
+    // var web3 = new Web3( new Web3.providers.HttpProvider("http://127.0.0.1:7545"));
+    var nppayAddr = '0x43Ee8229Ed1BEe11706b806812447854FAc3b287';
+    // nppay = web3.eth.contract(abi).at(nppayAddr);
+    nppay = new web3js.eth.Contract(abi, nppayAddr);
+    // userAccount = web3.eth.accounts[0];
+    userAccount  = "0x174f58A431A8D2Be1E1e58265bb63801caAEddcb";
+    // console.log(nppay);
+    // nppay = nppay.options.address('0x43Ee8229Ed1BEe11706b806812447854FAc3b287');
+    // console.log(nppay);
+
+    // var accountInterval = setInterval(function() {
+    //   if (web3.eth.accounts[0] !== userAccount) {
+    //     userAccount = web3.eth.accounts[0];
+    //   }
+    // }, 100);
+  }
+
+  function issueProblem() {
+
+    //Get fields
+    var pString = document.getElementById("pstring").value;
+    var numVars = document.getElementById("vars").value;
+    var numClauses = document.getElementById("clauses").value;
+    var reward = document.getElementById("reward").value;
+    console.log(pString);
+    console.log(numVars);
+    console.log(numClauses);
+    console.log(reward);
+
+    //hash
+    var hash = keccak256(pString);
+    // var hash_bytes = [];
+    // var buffer = new Buffer(hash, 'utf16le');
+    // for (var i = 0; i < buffer.length; i++) {
+    //   hash_bytes.push(buffer[i]);
+    // }
+    var hash_bytes = web3.fromAscii(hash);
+
+    nppay.methods.createSATProblem("", hash_bytes, numVars, numClauses, reward)
+    .send({from: userAccount, value: web3js.utils.toWei(reward.toString(), "ether")})
+      .on("receipt", function(receipt){
+        console.log(receipt);
+      }).on("error", function(error){
+        console.log(error);
+      }).then(function (result) {
+        console.log(result);
+      });
+    // return;
+  }
+
+  window.addEventListener('load', function() {
+
+    // Checking if Web3 has been injected by the browser (Mist/MetaMask)
+    if (typeof web3 !== 'undefined') {
+      // Use Mist/MetaMask's provider
+      console.log("We have Web3.js")
+      web3js = new Web3(web3.currentProvider);
+    }
+    else {
+      // Handle the case where the user doesn't have web3. Probably
+      // show them a message telling them to install Metamask in
+      // order to use our app.
+      console.log("We don't have Web3.js!!")
+      web3js = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:7545"));
+    }
+
+    // Now you can start your app & access web3js freely:
+    startApp()
+    // userAccount = web3.eth.accounts[0];
+
+  })
+  </script>
+
   <nav class="navbar navbar-default navbar-fixed-top navbar-light"
   style="background-color: #f7931a;border:none;">
   <div class="container-fluid">
@@ -51,7 +132,7 @@
 </div>
 <div class="innerDiv">
     <h2>Please Provide Problem Metadata</h2></br>
-    <form class="form-horizontal" action="" onsubmit="return submitProblem(this)">
+    <form class="form-horizontal" onsubmit="return issueProblem();">
       <div class="col-sm-10">
         <!-- <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span> -->
         <input type="text" class="form-control" id="pstring" placeholder="Enter SAT Problem String" name="pstring">
