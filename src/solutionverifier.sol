@@ -26,6 +26,8 @@ contract SolutionVerifier is SolutionFactory {
     mapping (uint => mapping (uint => bool)) solution_is_verified;
     // result of the verification
     mapping (uint => mapping (uint => bool)) solution_is_correct;
+    // whether the solver has voted to a specific solution
+    mapping (address => mapping (uint => mapping (uint => bool))) has_voted;
     
     // balance of each player
     mapping (address => uint) internal balance;
@@ -44,10 +46,12 @@ contract SolutionVerifier is SolutionFactory {
         require(solutions_SAT[problemId].length > solutionId);
         // cannot vote after the verification function has been called
         require(!solution_is_verified[problemId][solutionId]);
+        require(!has_voted[msg.sender][problemId][solutionId]);
         require(msg.value >= vote_deposit);
         if (trigger_verify) {
     	    require(can_trigger_manual_verification(problemId, solutionId));
         }
+        has_voted[msg.sender][problemId][solutionId] = true;
         if (vote_up) {
 	        // vote for the solution
 	        upvotes_SAT[problemId][solutionId].push(msg.sender);
