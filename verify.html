@@ -20,6 +20,85 @@
   <title>NP-Pay</title>
 </head>
 <body>
+  <script>
+  var nppay;
+  var userAccount;
+
+  function startApp(){
+    var nppayAddr = '0x43Ee8229Ed1BEe11706b806812447854FAc3b287';
+    nppay = new web3js.eth.Contract(abi, nppayAddr);
+
+    userAccount  = "0x174f58A431A8D2Be1E1e58265bb63801caAEddcb";
+
+    console.log(nppay);
+  }
+
+  function wait(ms){
+   var start = new Date().getTime();
+   var end = start;
+   while(end < start + ms) {
+     end = new Date().getTime();
+  }
+}
+
+  function issueSolutionHash() {
+    //Get fields
+    var pId = document.getElementById("pid").value;
+    var solString = document.getElementById("solstring").value;
+
+    //hash
+    var hash = keccak256(solString);
+    var hash_bytes = web3.fromAscii(hash);
+
+    var hashId;
+    nppay.methods.proposeSATSolutionHash(pId, hash_bytes)
+    .send({from: userAccount, value: web3js.utils.toWei("1", "ether")})
+      .on("receipt", function(receipt){
+        console.log(receipt);
+        // proposeSATSolution(pId, hashId, solString);
+      }).on("error", function(error){
+        console.log(error);
+      })
+      .then(function(id) {
+        hashId = id;
+      })
+  }
+
+  function issueSolution(pId, hashId, solString){
+    nppay.methods.proposeSATSolution(pId, hashId, solString)
+    .send({from: userAccount, value: web3js.utils.toWei("2", "ether")})
+      .on("receipt", function(receipt){
+        console.log(receipt);
+      }).on("error", function(error){
+        console.log(error);
+      })
+      .then(function(solID) {
+        //Do something with solID
+      })
+  }
+
+  window.addEventListener('load', function() {
+
+    // Checking if Web3 has been injected by the browser (Mist/MetaMask)
+    if (typeof web3 !== 'undefined') {
+      // Use Mist/MetaMask's provider
+      console.log("We have Web3.js")
+      web3js = new Web3(web3.currentProvider);
+    }
+    else {
+      // Handle the case where the user doesn't have web3. Probably
+      // show them a message telling them to install Metamask in
+      // order to use our app.
+      console.log("We don't have Web3.js!!")
+      web3js = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:7545"));
+    }
+
+    // Now you can start your app & access web3js freely:
+    startApp()
+    // userAccount = web3.eth.accounts[0];
+
+  })
+  </script>
   <nav class="navbar navbar-default navbar-fixed-top navbar-light"
   style="background-color: #f7931a;border:none;">
   <div class="container-fluid">
@@ -61,10 +140,10 @@
     <div class="col-sm-10">
     <p></br>Vote Type:</p>
     <label class="checkbox-inline">
-      <input type="checkbox" value=""></br>Yes
+      <input type="checkbox" id ="yes" value=""></br>Yes
     </label>
     <label class="checkbox-inline">
-      <input type="checkbox" value=""></br>No
+      <input type="checkbox" is="no" value=""></br>No
     </label>
   </div>
     <div class="col-sm-10">

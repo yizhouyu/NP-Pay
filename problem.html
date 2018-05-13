@@ -65,7 +65,7 @@
     // for (var i = 0; i < buffer.length; i++) {
     //   hash_bytes.push(buffer[i]);
     // }
-    var hash_bytes = web3.fromAscii(hash);
+    var hash_bytes = str_to_byte32(hash);
 
     nppay.methods.createSATProblem("", hash_bytes, numVars, numClauses, reward)
     .send({from: userAccount, value: web3js.utils.toWei(reward.toString(), "ether")})
@@ -77,6 +77,16 @@
         console.log(result);
       });
     // return;
+  }
+
+  function str_to_byte32(str) {
+    var converted_bytes = [];
+    for (var i = 0; i < str.length; i += 2) {
+      var sub_str = str.substring(i, i+2);
+      var b = parseInt(sub_str, 16) & (255);
+      converted_bytes.push(b);
+    }
+    return converted_bytes;
   }
 
   window.addEventListener('load', function() {

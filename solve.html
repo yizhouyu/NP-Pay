@@ -24,28 +24,16 @@
 </head>
 <body>
   <script>
-  // keccak256 = require('js-sha3').keccak256;
   var nppay;
   var userAccount;
 
   function startApp(){
-    // var web3 = new Web3( new Web3.providers.HttpProvider("http://127.0.0.1:7545"));
     var nppayAddr = '0x43Ee8229Ed1BEe11706b806812447854FAc3b287';
-    // nppay = web3.eth.contract(abi).at(nppayAddr);
     nppay = new web3js.eth.Contract(abi, nppayAddr);
-    // userAccount = web3.eth.accounts[0];
 
     userAccount  = "0x174f58A431A8D2Be1E1e58265bb63801caAEddcb";
-    // nppay = new web3js.eth.Contract(abi, nppayAddr);
-    // console.log(nppay);
-    // nppay = nppay.options.address('0x43Ee8229Ed1BEe11706b806812447854FAc3b287');
-    console.log(nppay);
 
-    // var accountInterval = setInterval(function() {
-    //   if (web3.eth.accounts[0] !== userAccount) {
-    //     userAccount = web3.eth.accounts[0];
-    //   }
-    // }, 100);
+    console.log(nppay);
   }
 
   function wait(ms){
@@ -63,7 +51,7 @@
 
     //hash
     var hash = keccak256(solString);
-    var hash_bytes = web3.fromAscii(hash);
+    var hash_bytes = str_to_byte32(hash);
 
     var hashId;
     nppay.methods.proposeSATSolutionHash(pId, hash_bytes)
@@ -77,6 +65,18 @@
       .then(function(id) {
         hashId = id;
       })
+  }
+
+  function str_to_byte32(str) {
+    // var converted_bytes = [];
+    var converted_bytes = new Uint8Array(32);
+    for (var i = 0; i < str.length; i += 2) {
+      var sub_str = str.substring(i, i+2);
+      var b = parseInt(sub_str, 16) & (0xFF);
+      // converted_bytes.push(b);
+      converted_bytes[i/2] = b;
+    }
+    return converted_bytes;
   }
 
   function issueSolution(pId, hashId, solString){
