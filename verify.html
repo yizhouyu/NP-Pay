@@ -6,7 +6,9 @@
 
 <link rel="stylesheet" type="text/css" href="style.css">
 
-<script src="bundle.js"></script>
+<script language="javascript" type="text/javascript" src="web3.min.js"></script>
+<script src="abi.js"></script>
+<script src="node_modules/js-sha3/src/sha3.js"></script>
 
 <!-- FONTS -->
 <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -42,12 +44,19 @@
     //Get fields
     var pId = document.getElementById("pid").value;
     var sId = document.getElementById("sid").value;
+    var evidence = document.getElementById("evidence").value;
+    var triggerRadio = document.getElementsByName('trigger');
+    var trigger = triggerRadio[0].checked ? 1 : 0 ;
+    var voteRadio = document.getElementsByName('vote');
+    var vote = voteRadio[0].checked ? 1 : 0 ;
+    if (!vote){
+      evidence = 0;
+    }
 
-    nppay.methods.vote_SAT(pId, sId, uint evidence, bool trigger_verify, bool vote_up)
+    nppay.methods.vote_SAT(pId, sId, evidence, trigger, vote)
     .send({from: userAccount, value: web3js.utils.toWei("1", "ether")})
       .on("receipt", function(receipt){
         console.log(receipt);
-        // proposeSATSolution(pId, hashId, solString);
       }).on("error", function(error){
         console.log(error);
       })
@@ -116,15 +125,24 @@
     <div class="col-sm-10">
     <p></br>Vote Type:</p>
     <label class="checkbox-inline">
-      <input type="checkbox" id ="yes" value=""></br>Yes
+      <input type="radio" id="yes" name="vote" value=""></br>Yes
     </label>
     <label class="checkbox-inline">
-      <input type="checkbox" is="no" value=""></br>No
+      <input type="radio" id="no" name="vote" value=""></br>No
     </label>
   </div>
+  <div class="col-sm-10">
+  <p></br>Trigger Verification Function? (Note: You bear the gas cost):</p>
+  <label class="checkbox-inline">
+    <input type="radio" id="yes" name="trigger" value=""></br>Yes
+  </label>
+  <label class="checkbox-inline">
+    <input type="radio" id="no" name="trigger" value=""></br>No
+  </label>
+</div>
     <div class="col-sm-10">
       </br>
-      <input type="text" class="form-control" id="wrongClause" placeholder="If no, which clause is wrong?" name="wrongClause">
+      <input type="text" class="form-control" id="evidence" placeholder="If no, which clause is wrong?" name="wrongClause">
     </div>
     <div class="form-group">
       <div class="col-sm-offset-2 col-sm-10">
