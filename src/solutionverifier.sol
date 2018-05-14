@@ -49,6 +49,7 @@ contract SolutionVerifier is SolutionFactory {
         require(!has_voted[msg.sender][problemId][solutionId]);
         require(msg.value >= vote_deposit);
         if (trigger_verify) {
+            require(!vote_up);
     	    require(can_trigger_manual_verification(problemId, solutionId));
         }
         has_voted[msg.sender][problemId][solutionId] = true;

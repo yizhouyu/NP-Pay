@@ -26,10 +26,10 @@ contract SolutionFactory is ProblemFactory {
     }
     
     // mapping from problemId to array of solution hashes
-    mapping (uint => SATSolutionHash[]) public solutionHashes_SAT; 
+    mapping (uint => SATSolutionHash[]) internal solutionHashes_SAT; 
     
     // mapping from problemId to array of solutions
-    mapping (uint => SATSolution[]) public solutions_SAT; 
+    mapping (uint => SATSolution[]) internal solutions_SAT; 
 
     event SATSolutionHashProposed(uint problemId, uint hashId, uint256 time_proposed);
     
@@ -44,7 +44,7 @@ contract SolutionFactory is ProblemFactory {
         require(sat_problems.length > problemId);
         // no more than max_solutions_to_record people can propose a solution hash
         require(solutionHashes_SAT[problemId].length < max_solutions_to_record);
-        // check that the same address has not proposed a solution hash to the same problem before
+        // the same address can only propose one solution hash to a problem
         SATSolutionHash[] storage hashes = solutionHashes_SAT[problemId];
         for (uint i=0; i<hashes.length; i++) {
             require(hashes[i].solver != msg.sender);
@@ -71,5 +71,9 @@ contract SolutionFactory is ProblemFactory {
         uint solutionId = solutions_SAT[problemId].push(SATSolution(sol_hash.time_proposed, now, msg.sender, assignment));
         emit SATSolutionProposed(problemId, hashId, solutionId, now);
         return solutionId;
+    }
+    
+    function getProposedSolution(uint problemId, uint solutionId) public view returns (string) {
+        return solutions_SAT[problemId][solutionId].assignment;
     }
 }

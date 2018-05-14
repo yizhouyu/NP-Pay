@@ -50,17 +50,25 @@
     var hash = keccak256(solString);
     var hash_bytes = "0x" + hash;
 
-    var hashId;
     nppay.methods.proposeSATSolutionHash(pId, hash_bytes)
     .send({from: userAccount, value: web3js.utils.toWei("1", "ether")})
       .on("receipt", function(receipt){
         console.log(receipt);
-        // proposeSATSolution(pId, hashId, solString);
+        proposeSATSolution(pId, hashId, solString);
       }).on("error", function(error){
         console.log(error);
       })
-      .then(function(id) {
-        hashId = id;
+
+    var hashId = 1;
+	  nppay.methods.proposeSATSolution(pId, hashId, solString)
+    .send({from: userAccount, value: web3js.utils.toWei("2", "ether")})
+      .on("receipt", function(receipt){
+        console.log(receipt);
+      }).on("error", function(error){
+        console.log(error);
+      })
+      .then(function(solID) {
+        //Do something with solID
       })
   }
 
