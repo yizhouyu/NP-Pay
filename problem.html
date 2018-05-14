@@ -38,6 +38,8 @@
     // }, 100);
   }
 
+  var problem_ct = 0
+
   function issueProblem() {
 
     //Get fields
@@ -54,7 +56,9 @@
     var hash = keccak256(pString);
     var hash_bytes = "0x" + hash;
 
-    nppay.methods.createSATProblem("", hash_bytes, numVars, numClauses, reward)
+	problem_ct++;
+
+    nppay.methods.createSATProblem(problem_ct.toString(), hash_bytes, numVars, numClauses, reward)
     .send({from: userAccount, value: web3js.utils.toWei(reward.toString(), "ether")})
       .on("receipt", function(receipt){
         console.log(receipt);
