@@ -7,8 +7,8 @@ contract SolutionFactory is ProblemFactory {
     // deposit that the problem solver needs to pay to the contract when it proposes
     // a solution hash and a solution. 
     // The deposit is non-refundable. 
-    uint solution_hash_deposit = 1; // TODO change
-    uint solution_deposit = 2; // TODO change
+    uint solution_hash_deposit = 0.01 ether;
+    uint solution_deposit = 0.02 ether;
     // maximum number of solutions that can be proposed to a given problem
     uint max_solutions_to_record = 3;
 

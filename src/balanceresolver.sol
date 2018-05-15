@@ -1,11 +1,14 @@
 pragma solidity ^0.4.19;
 
 import "./solutionverifier.sol";
+import "./safemath.sol";
 
 contract BalanceResolver is SolutionVerifier {
     
+    using SafeMath for uint256;
+    
     // minimum time window during which the network can vote on the solution
-    uint cooldown_period = 1 minutes;
+    uint cooldown_period = 1 days;
     
     // final solution to problems
     mapping (uint => string) final_solution;
@@ -33,37 +36,39 @@ contract BalanceResolver is SolutionVerifier {
         bool has_up_votes = (upvotes_SAT[problemId][solutionId].length > 0);
         bool no_down_vote = (downvotes_SAT[problemId][solutionId].length == 0);
         if (verified_and_correct || (has_up_votes && no_down_vote)) {
-            balance[solution.solver] += problem.reward;
+            balance[solution.solver] = balance[solution.solver].add(problem.reward);
             problem.solved = true;
             final_solution[problemId] = solution.assignment;
             if (no_down_vote) {
                 // return vote deposit to up-voters
                 address[] memory up_voters = upvotes_SAT[problemId][solutionId];
                 for (uint i = 0; i<up_voters.length; i++) {
-                    balance[up_voters[i]] += vote_deposit;
+                    balance[up_voters[i]] = balance[up_voters[i]].add(vote_deposit);
                 }
             }
-        }
-        // return deposit to voters of other solutions of the same problem
-        // no matter what they voted, as long as no veriication has been 
-        // previously triggered on the solution
-        for (uint s = 0; i<solutions_SAT[problemId].length; i++) {
-            if (s == solutionId || solution_is_verified[problemId][s]) {
-                continue;
-            } else {
-                up_voters = upvotes_SAT[problemId][s];
-                for (i = 0; i < up_voters.length; i++) {
-                    balance[up_voters[i]] += vote_deposit;
-                }
-                address[] memory down_voters = downvotes_SAT[problemId][s];
-                for (i = 0; i < down_voters.length; i++) {
-                    balance[down_voters[i]] += vote_deposit;
+            // return deposit to voters of other solutions of the same problem
+            // no matter what they voted, as long as no veriication has been 
+            // previously triggered on the solution
+            for (uint s = 0; i<solutions_SAT[problemId].length; i++) {
+                if (s == solutionId || solution_is_verified[problemId][s]) {
+                    // skip when voter deposit has already been resolved
+                    // for instance, when on-chain verification has already been triggered
+                    continue;
+                } else {
+                    up_voters = upvotes_SAT[problemId][s];
+                    for (i = 0; i < up_voters.length; i++) {
+                        balance[up_voters[i]] = balance[up_voters[i]].add(vote_deposit);
+                    }
+                    address[] memory down_voters = downvotes_SAT[problemId][s];
+                    for (i = 0; i < down_voters.length; i++) {
+                        balance[down_voters[i]] = balance[down_voters[i]].add(vote_deposit);
+                    }
                 }
             }
         }
     }
     
-    // returns the solution of the problem
+    // returns the final solution of the problemthat is agreed-upon by the whole network
     function get_solution(uint problemId) public view returns (string){
         // the problem must exist
         require(sat_problems.length > problemId);

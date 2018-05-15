@@ -1,19 +1,21 @@
 pragma solidity ^0.4.19;
 
 import "./solutionfactory.sol";
+import "./safemath.sol";
 
 contract SolutionVerifier is SolutionFactory {
-    // 1000 votes for manual trigger, 7500 votes for auto trigger, 24 hrs for auto trigger
+    
+    using SafeMath for uint256;
 
-    uint vote_deposit = 1; // TODO change
-    uint manual_trigger_gas_cost = 1; // TODO change
+    uint vote_deposit = 0.01 ether;
+    uint manual_trigger_gas_cost = 0.001 ether; // estimated gas cost to run manual trigger
     // minimum number of votes already collected required in order to manually trigger on-chain verification
     uint min_votes_to_manual_trigger = 1000; 
     uint min_votes_to_auto_trigger = 7500;
     uint min_time_to_auto_trigger = 24 hours;
     uint trigger_reward_div = 10; // divide reward by trigger_reward_div
     
-    string server_url = "github.com"; //TODO
+    string server_url = "github.com"; //TODO change to url of server
 
     // mapping from problemId to [mapping from solutionId to addresses of up votes]
     mapping (uint => mapping (uint => address[])) upvotes_SAT; 
@@ -61,6 +63,7 @@ contract SolutionVerifier is SolutionFactory {
 	        downvotes_SAT[problemId][solutionId].push(msg.sender);
 	        uint[] storage evidences = evidence_against_solution[problemId][solutionId];
 	        // go through evidences to make sure that the evidence has never been proposed before
+	        // because the array "evidences" should not contain two duplicate evidences.
 	        bool evidence_already_proposed = false;
 	        for (uint i = 0; i < evidences.length; i++){
 	            if (evidences[i] == evidence) {
@@ -90,9 +93,8 @@ contract SolutionVerifier is SolutionFactory {
     function can_trigger_manual_verification(uint problemId, uint solutionId) public view returns (bool) {
         uint num_upvotes = upvotes_SAT[problemId][solutionId].length;
         uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
-        // require that there is disagreement among voters
-        require (num_upvotes>0 && num_downvotes>0);
-        require (num_upvotes + num_downvotes > min_votes_to_manual_trigger);
+        // there is disagreement among voters, and the total number of voters is over min_votes_to_manual_trigger
+        return (num_upvotes>0 && num_downvotes>0) && (num_upvotes + num_downvotes > min_votes_to_manual_trigger);
     }
     
     /*
@@ -106,9 +108,9 @@ contract SolutionVerifier is SolutionFactory {
         uint num_downvotes = downvotes_SAT[problemId][solutionId].length;
         // require that there is disagreement among voters
         require(num_upvotes>0 && num_downvotes>0);
-        bool condition_1 = (num_upvotes + num_downvotes > min_votes_to_auto_trigger); // vote condition
+        bool condition_1 = (num_upvotes.add(num_downvotes) > min_votes_to_auto_trigger); // vote condition
         SATSolution memory solution = solutions_SAT[problemId][solutionId];
-        bool condition_2 = (now - solution.time_sol_proposed > min_time_to_auto_trigger); // time condition
+        bool condition_2 = (now.sub(solution.time_sol_proposed) > min_time_to_auto_trigger); // time condition
         return (condition_1 || condition_2);
     }
     
@@ -119,6 +121,7 @@ contract SolutionVerifier is SolutionFactory {
         address[] memory down_voters = downvotes_SAT[problemId][solutionId];
         uint num_upvotes = up_voters.length;
         uint num_downvotes = down_voters.length;
+        uint balance_to_add;
         
         if (!verify_solution(problemId, solutionId)) {
             // proposed solution is incorrect
@@ -129,20 +132,21 @@ contract SolutionVerifier is SolutionFactory {
                 // the caller of the verification is correct.
                 // the one who triggered verification gets reward
                 // reimburse gas cost
-                balance[msg.sender] += manual_trigger_gas_cost;
+                balance[msg.sender] = balance[msg.sender].add(manual_trigger_gas_cost);
                 // reward for triggering verification
-                uint trigger_reward = (num_upvotes*vote_deposit - manual_trigger_gas_cost) / trigger_reward_div;
-                balance[msg.sender] += trigger_reward;
-                uint normal_reward = (num_upvotes*vote_deposit - trigger_reward) / num_downvotes;
-                balance[msg.sender] += normal_reward;
+                uint trigger_reward = ((num_upvotes.mul(vote_deposit)).sub(manual_trigger_gas_cost)).div(trigger_reward_div);
+                balance[msg.sender] = balance[msg.sender].add(trigger_reward);
+                uint normal_reward = ((num_upvotes.mul(vote_deposit)).sub(trigger_reward)).div(num_downvotes);
+                balance[msg.sender] =  balance[msg.sender].add(normal_reward);
                 // the other voters who voted against the proposed solution get reward
                 for (uint i = 0; i<down_voters.length; i++) {
-                    balance[down_voters[i]] += (vote_deposit + normal_reward);
+                    balance[down_voters[i]] = balance[down_voters[i]].add((vote_deposit.add(normal_reward)));
                 }
             } else {
                 // the caller of the verification is incorrect
                 for (i = 0; i<down_voters.length; i++) {
-                    balance[down_voters[i]] += ((num_upvotes + num_downvotes) * vote_deposit / num_downvotes);
+                    balance_to_add = (((num_upvotes.add(num_downvotes)).mul(vote_deposit)).div(num_downvotes)); 
+                    balance[down_voters[i]] = balance[down_voters[i]].add(balance_to_add);
                 }
             }
         } else {
@@ -153,20 +157,21 @@ contract SolutionVerifier is SolutionFactory {
                 // the caller of the verification is correct
                 // the one who triggered verification gets reward
                 // reimburse gas cost
-                balance[msg.sender] += manual_trigger_gas_cost;
+                balance[msg.sender] = balance[msg.sender].add(manual_trigger_gas_cost);
                 // reward for triggering verification
-                trigger_reward = (num_downvotes*vote_deposit - manual_trigger_gas_cost) / trigger_reward_div;
-                balance[msg.sender] += trigger_reward;
-                normal_reward = (num_downvotes*vote_deposit - trigger_reward) / num_upvotes;
-                balance[msg.sender] += normal_reward;
+                trigger_reward = ((num_downvotes.mul(vote_deposit)).sub(manual_trigger_gas_cost)).div(trigger_reward_div);
+                balance[msg.sender] = balance[msg.sender].add(trigger_reward);
+                normal_reward = ((num_downvotes.mul(vote_deposit)).sub(trigger_reward)).div(num_upvotes);
+                balance[msg.sender] = balance[msg.sender].add(normal_reward);
                 // the other voters who voted for the proposed solution get reward
                 for (i = 0; i<up_voters.length; i++) {
-                    balance[up_voters[i]] += (vote_deposit + normal_reward);
+                    balance[up_voters[i]] = balance[up_voters[i]].add(vote_deposit.add(normal_reward));
                 }
             } else {
                 // the caller of the verification is incorrect
                 for (i = 0; i<up_voters.length; i++) {
-                    balance[up_voters[i]] += ((num_upvotes + num_downvotes) * vote_deposit / num_upvotes);
+                    balance_to_add = ((num_upvotes.add(num_downvotes)).mul(vote_deposit)).div(num_upvotes);
+                    balance[up_voters[i]] = balance[up_voters[i]].add(balance_to_add);
                 }
         }
         } 
@@ -178,7 +183,8 @@ contract SolutionVerifier is SolutionFactory {
         address[] memory down_voter_addresses = downvotes_SAT[problemId][solutionId];
         uint num_upvotes = up_voter_addresses.length;
         uint num_downvotes = down_voter_addresses.length;
-        uint total_votes = num_upvotes + num_downvotes;
+        uint total_votes = num_upvotes.add(num_downvotes);
+        uint balance_to_add;
         
         if (!verify_solution(problemId, solutionId)) {
             // proposed solution is incorrect
@@ -186,7 +192,8 @@ contract SolutionVerifier is SolutionFactory {
             emit Verification_Performed(problemId, solutionId, false);
             // those who cast down votes get the reward
             for (uint i = 0; i<down_voter_addresses.length; i++) {
-                    balance[down_voter_addresses[i]] += (total_votes*vote_deposit) / num_downvotes;
+                balance_to_add = (total_votes.mul(vote_deposit)).div(num_downvotes);
+                balance[down_voter_addresses[i]] = balance[down_voter_addresses[i]].add(balance_to_add);
             }
         } else {
             // proposed solution is correct
@@ -194,7 +201,8 @@ contract SolutionVerifier is SolutionFactory {
             emit Verification_Performed(problemId, solutionId, true);
             // those who cast up votes get the reward
             for (i = 0; i<up_voter_addresses.length; i++) {
-                    balance[up_voter_addresses[i]] += (total_votes*vote_deposit) / num_upvotes;
+                balance_to_add = (total_votes.mul(vote_deposit)).div(num_upvotes);
+                balance[up_voter_addresses[i]] = balance[up_voter_addresses[i]].add(balance_to_add); 
             }
         }
         solution_is_verified[problemId][solutionId] = true;
@@ -202,6 +210,7 @@ contract SolutionVerifier is SolutionFactory {
     
     // TODO
     // Read a clause from the url and verify that the clause is correctly returned from the url
+    // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
     function read_clause_from_url(string url, uint clause_no) private pure returns (string) {
         url = "";
         clause_no = 0;
