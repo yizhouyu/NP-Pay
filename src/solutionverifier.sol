@@ -40,7 +40,8 @@ contract SolutionVerifier is SolutionFactory {
     
     // vote on the solution
     // if trigger_verify -> trigger verification on chain
-    // need to provide evidence if you want to vote against the solution, and indicate which clause is unsatisfied by the solution assignment
+    // need to provide evidence if you want to vote against the solution: 
+    // the evidence is a number that indicates which clause is unsatisfied by the solution assignment
     function vote_SAT(uint problemId, uint solutionId, uint evidence, bool trigger_verify, bool vote_up) public payable {
         // the problem must exist
         require(sat_problems.length > problemId);
@@ -208,10 +209,11 @@ contract SolutionVerifier is SolutionFactory {
         solution_is_verified[problemId][solutionId] = true;
     }
     
-    // TODO
     // Read a clause from the url and verify that the clause is correctly returned from the url
     // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
     function read_clause_from_url(string url, uint clause_no) private pure returns (string) {
+        // not implemented yet, can use oraclize to communicate with server in order to get the clause
+        // at the given clause number.
         url = "";
         clause_no = 0;
         return "102";
@@ -234,8 +236,10 @@ contract SolutionVerifier is SolutionFactory {
     }
     
     // run verification on-chain. Check whether [assignment] satisfies [clause].
-    // clauses: 0: exist, negated; 1: exist, regular; 2: not exist
+    // clause format: 0: exist, negated; 1: exist, regular; 2: not exist
     // assignment: binary string, 0: F, 1: T
+    // for instance, if we have a total of three variables and a clause x1 \/ not(x3),
+    // then the string representation of this clause would be "120"
     function verify_assignment(string clause, string assignment) public pure returns (bool) {
         // convert assignment string to array
         bytes memory b_clause = bytes(clause);
@@ -249,7 +253,8 @@ contract SolutionVerifier is SolutionFactory {
     }
     
     // not used
-    // run verification on-chain. Check whether [assignment] satisfies [clauses].
+    // run verification on-chain. Check whether [assignment] satisfies [clauses],
+    // where [clauses] represents a list of clauses.
     function verify_assignment_old(string clauses, string assignment) public pure returns (bool) {
         // convert assignment string to array
         bytes memory b_clauses = bytes(clauses);
